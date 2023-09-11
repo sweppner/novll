@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+      <link rel="stylesheet" href="assets/css/style.css">
+      <title>Novll - AI books</title>
+  </head>
+  <body>
+  <!-- multistep form -->
+  <div class="row">
+      <div class="column">
+          <form>
+              <!-- fieldsets -->
+              <fieldset>
+                  <legend>Tell us about your favorite book!</legend>
+                  <h3 class="fs-subtitle">We'll use this to come up with some ideas for books you might like</h3>
+                  <h4 class="fs-subtitle">Give us the name of a book that you love and the author that wrote it, and we'll do the rest! </h4>
+                  <input id="author_name" type="text" name="author_name" placeholder="Author's Full Name" />
+                  <input id="book_title" type="text" name="book_title" placeholder="Book's Title" />
+                  <!--          <input type="password" name="cpass" placeholder="Confirm Password" />-->
+                  <input id="preferences_submit" type="button" name="next" value="Next" />
+              </fieldset>
+              <fieldset>
+                  <legend>Concept Selection</legend>
+                  <h3 class="fs-subtitle">Choose a story that you like</h3>
+                  <div id="book-ideas-list"></div>
+              </fieldset>
+              <!--          <fieldset>-->
+              <!--              <legend>Book Details</legend>-->
+              <!--              <input id="num_chapters" type="text" name="num-chapters" placeholder="How many chapters?" />-->
+              <!--              <input id="details_submit" type="button" name="next" value="Next" />-->
+              <!--          </fieldset>-->
+<!--              <fieldset>-->
+<!--                  <legend>Personal Details</legend>-->
+<!--                  <h3 class="fs-subtitle">We will never sell it</h3>-->
+<!--                  <input type="text" name="fname" placeholder="First Name" />-->
+<!--                  <input type="text" name="lname" placeholder="Last Name" />-->
+<!--                  <input type="text" name="phone" placeholder="Phone" />-->
+<!--                  <textarea name="address" placeholder="Address"></textarea>-->
+<!--                  <input type="button" name="previous" class="previous action-button" value="Previous" />-->
+<!--                  <a href="https://twitter.com/GoktepeAtakan" class="submit action-button" target="_top">Submit</a>-->
+<!--              </fieldset>-->
+          </form>
+      </div>
+      <div class="column concept-selection">
+          <h2 id="your_book_title">[Your new book's title]</h2>
+          <h3 id="your_book_genre">[Your new book's genre]</h3>
+          <h4>Your book will be <span id="your_book_chapters">[__]</span> chapters long</h4>
+          <p id="your_book_synopsis">[Your book's synopsis]</p>
+          <input id="book_submit" type="button" name="next" value="Create" />
+      </div>
+  </div>
+
+
+
+
+  </body>
+  <script src="assets/js/script.js"></script>
+
+</html>
