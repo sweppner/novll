@@ -6,6 +6,7 @@ const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const directory = "../web/html-landing-page/landing.html"
+const bodyParser = require('body-parser');
 
 
 
@@ -110,16 +111,20 @@ app.get('/ideas/genre_concept', async (req, res) => {
 //build book by selected concept
 app.post('/build/book', async (req, res) => {
     const jsonInput = req.body; // Get JSON payload
+    console.log('req')
+    console.log(req)
+    console.log('jsonInput')
+    console.log(jsonInput)
 
     if(jsonInput && jsonInput.name){
         // Construct and return a string response
         const response = `Hello, ${jsonInput.name}! Your JSON object has been processed.`;
         try {
             // Wait for the asynchronous function to complete
-            const bookIdeas = await NovllAuthor.createBook(jsonInput);
+            const book = await NovllAuthor.createBook(jsonInput);
 
             // Send the response back to the client
-            res.status(200).send(bookIdeas);
+            res.status(200).send(book);
         } catch (error) {
             console.error('An error occurred:', error);
             res.status(500).send('Internal Server Error');
@@ -170,6 +175,9 @@ app.use((req, res, next) => {
     );
     next();
 });
+
+app.use(bodyParser.json()); // <-- this guy!
+
 
 // rest listener
 app.listen(port, () => {
