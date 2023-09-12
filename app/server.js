@@ -184,8 +184,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve index.html as the home page
 app.get('/', (req, res) => {
+    console.log("Starting up web server...")
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+// res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Add other headers here
 
 
 app.use((req, res, next) => {
@@ -194,6 +196,7 @@ app.use((req, res, next) => {
         "Access-Control-Allow-Headers",
         "Origin, X-Requested-With, Content-Type, Accept"
     );
+    res.header('Access-Control-Allow-Methods', 'POST')
     next();
 });
 

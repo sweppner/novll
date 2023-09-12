@@ -4,7 +4,8 @@ let full_base_url = base_url+':'+port;
 
 document.addEventListener("DOMContentLoaded", () => {
     addEventListenerById("favorite_book_author_submit", handleFavoriteBookAndAuthorSubmit, "click");
-    addEventListenerById("book_submit", handleCreateBook, "click");
+    addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
+    addEventListenerById("create_book_submit", handleCreateBook, "click");
 });
 
 function addEventListenerById(id, handler, type) {
@@ -125,7 +126,7 @@ function generateHTMLList(books) {
             </label>`;
     });
     html += '</form><input id="num_chapters" type="text" name="num-chapters" value="10" placeholder="How many chapters?" />';
-    html += '<input type="button" id="create_book" name="next" value="Generate Book!" />';
+    html += '<input type="button" id="create_book_submit" name="next" value="Generate Book!" />';
     html += '<input type="button" id="5_more_concepts_submit" name="next" value="Five More Book Ideas" />';
     return html;
 }
