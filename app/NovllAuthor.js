@@ -156,8 +156,8 @@ async function createBook(bookInfo) {
 //TODO: need a way to validate books/authors
 //TODO: idea, something to suggest other books or authors by genre
 
-const includesDescription = "Each book idea including a title, a concept, a synopsis, a genre, and a description " +
-    "of the cover art for the front of the book."
+const includesDescription = "Each book idea including a title, a brief concept, a synopsis that is 5 " +
+    "sentences long, a genre, and a description of the cover art for the front of the book."
 const responseFormat = "Please provide the response formatted as a JSON object. For title use the key " +
     "\"title\", for concept use the key \"concept\", for synopsis use the key \"synopsis\", for genre use the" +
     " key \"genre\", and for the description of the cover art for the front of the book use the key \"cover_art\"."
