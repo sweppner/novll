@@ -24,8 +24,6 @@ function handleFavoriteBookAndAuthorSubmit() {
     fetchBooks(author_name, book_title)
         .then(books => {
             let booksHtml = generateHTMLList(books);
-            console.log('booksHtml');
-            console.log(booksHtml);
             document.getElementById("book-ideas-list").innerHTML = booksHtml;
             addEventListenerById("create_book", handleCreateBook, "click");
             addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
