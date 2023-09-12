@@ -1,4 +1,5 @@
 const NovllAuthor = require('./NovllAuthor');
+const fs = require('fs');
 const express = require('express');
 const app = express();
 const port = 3000;
@@ -6,9 +7,29 @@ const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const directory = "../web/html-landing-page/landing.html"
+const morgan = require('morgan');
+const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
+// Enable logging
+app.use(morgan('dev'));
 
+// Grab all the models
+fs.readdirSync(__dirname + '/models').forEach(function(filename){
+    if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
+});
+// connect to the db
+const mongodb_db_name = "NovelDB"
+const mongodb_collection = "novels"
+// mongoose.connect("mongodb+srv://admin:<password>@serverlessinstance0.e8wmahg.mongodb.net/NovelDB?retryWrites=true&w=majority", {useNewUrlParser: true, useUnifiedTopology: true,  authSource:'admin'});
+
+//
+fs.readdirSync(__dirname + '/routes').forEach(function(filename){
+    // filename = filename.slice(0, -3);
+    // filename = require('./routes/' + filename + '.js');
+    if (~filename.indexOf('.js')) require(__dirname + '/routes/' + filename);
+
+});
 
 //get book ideas by book title
 app.get('/ideas/title', async (req, res) => {
