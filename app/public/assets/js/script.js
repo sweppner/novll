@@ -33,24 +33,6 @@ function handleFavoriteBookAndAuthorSubmit() {
         .catch(error => console.error(`There was a problem with the fetch: ${error}`));
 }
 
-function addRadioButtonListeners(){
-    const radioButtons = document.querySelectorAll('input[type="radio"][name="book"]');
-
-    // <input type="radio" name="book" title="${title}" genre="${genre}" synopsis="${synopsis}" value="${title}">
-    const your_book_title = document.getElementById('your_book_title');
-    const your_book_genre = document.getElementById('your_book_genre');
-    const your_book_chapters = document.getElementById('your_book_chapters');
-    const your_book_synopsis = document.getElementById('your_book_synopsis');
-    radioButtons.forEach(radioButton => {
-        radioButton.addEventListener('change', () => {
-            your_book_title.textContent = radioButton.getAttribute('title');
-            your_book_genre.textContent = radioButton.getAttribute('genre');
-            your_book_chapters.textContent = document.getElementById("num_chapters").value;
-            your_book_synopsis.textContent = radioButton.getAttribute('synopsis');
-        });
-    });
-}
-
 function handleFiveMoreConceptsSubmit() {
     console.log('User requested 5 more book ideas.');
     document.getElementById('book-ideas-list').innerHTML = '<h2>Loading...</h2>'
@@ -70,6 +52,24 @@ function handleFiveMoreConceptsSubmit() {
         .catch(error => console.error(`There was a problem with the fetch: ${error}`));
 }
 
+function addRadioButtonListeners(){
+    const radioButtons = document.querySelectorAll('input[type="radio"][name="book"]');
+
+    // <input type="radio" name="book" title="${title}" genre="${genre}" synopsis="${synopsis}" value="${title}">
+    const your_book_title = document.getElementById('your_book_title');
+    const your_book_genre = document.getElementById('your_book_genre');
+    const your_book_chapters = document.getElementById('your_book_chapters');
+    const your_book_synopsis = document.getElementById('your_book_synopsis');
+    radioButtons.forEach(radioButton => {
+        radioButton.addEventListener('change', () => {
+            your_book_title.textContent = radioButton.getAttribute('title');
+            your_book_genre.textContent = radioButton.getAttribute('genre');
+            your_book_chapters.textContent = document.getElementById("num_chapters").value;
+            your_book_synopsis.textContent = radioButton.getAttribute('synopsis');
+        });
+    });
+}
+
 function handleCreateBook() {
     console.log('Creating book!')
 
@@ -80,11 +80,14 @@ function handleCreateBook() {
         "synopsis":document.getElementById("your_book_synopsis").innerHTML,
     }
 
-    fetch(full_base_url+'/build/book', {
-        // mode: 'no-cors',
+    fetch('/build/book', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: book_object
+        mode: 'cors', // this cannot be 'no-cors'
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(book_object), // body data type must match "Content-Type" header
     })
         .then(response => response.json())
         .then(data => {
