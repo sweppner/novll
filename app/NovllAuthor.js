@@ -2,13 +2,29 @@ const { MongoClient, ServerApiVersion} = require('mongodb');
 const OpenAIApi = require("openai");
 const fs = require('fs').promises;
 const uuid = require('uuid');
+const axios = require('axios');
+
 require('dotenv').config();
+let context = ""
 
 const mongodb_db_name = "NovelDB"
 const mongodb_collection = "novels"
 
 const uri = "mongodb+srv://admin:<password>@serverlessinstance0.e8wmahg.mongodb.net/?retryWrites=true&w=majority";
 
+const role_content = "You are an expert AI author who has the ability to write with the style" +
+                        "and skill of any known or unknown author.";
+
+// { role: 'user', content: 'Who won the world series in 2020?' },
+// { role: 'assistant', content: 'The Los Angeles Dodgers won the World Series in 2020.' },
+// { role: 'user', content: 'Where was it played?' },
+
+const messages = [
+    { role: 'system', content: 'You are an expert AI author who has the ability to mimic the style and skill of any known or unknown author.' },
+];
+
+
+// const role_context_summary = "you are "
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
@@ -85,20 +101,41 @@ async function createBook(bookInfo) {
     const characterData = {};
     const draft = [];
 
-    const conceptValidation = await getGpt3Response(`Validate the concept for the novel: ${bookInfo.concept}`);
-    const themeExploration = await getGpt3Response("Identify themes that the novel will explore.");
-    const outline = await getGpt3Response("Create an outline for the novel based on the synopsis.");
-    const numCharString = await getGpt3Response("Based on the outline [ " + outline + " ] determine the number of characters the story should include and respond to this prompt with just the number, and nothing else.")
-    let numChar = parseInt(numCharString)
+    console.log(bookInfo)
 
+
+    // const conceptValidation = await getGpt3Response('Validate the concept for the novel:'+bookInfo['concept'];
+    const themeExploration = await getGpt3Response("Identify themes that the novel \""+bookInfo['title']+"\" will explore based on the following synopsis: ["+bookInfo["synopsis"]+"]", true);
+
+    messages.push({
+
+    })
+    console.log('themeExploration')
+    console.log(themeExploration)
+    const outline = await getGpt3Response("Create a detailed outline, chapter by chapter, for the novel for a book containing "+bookInfo['num_chapters']+" chapters based on the synopsis ["+bookInfo['synopsis']+"] and literary themes ["+themeExploration+"]. Structure the outline as a JSON object, where the keys are the chapter numbers and the values are the detailed chapter descriptions.");
+    console.log('outline')
+    console.log(outline)
+    const characters_string = await getGpt3Response("Based on the outline [ " + outline + " ] determine the " +
+        "number of characters the story should include and respond to this prompt with a JSON object where they key " +
+        "is the character name and the value is a JSON object where the first key is \'description\' and the " +
+        "corresponding value is the character description, and the second key is \'introduced\' and the value is a " +
+        "JSON object where the first key is \'chapter\' with a corresponding value that is the chapter the character " +
+        "is introduced and the second key is \'scenario\' with a value of a description of the scenario in which the " +
+        "character is introduced .")
+    let characters = JSON.parse(characters_string)
+    console.log('characters')
+    console.log(characters)
+    let char_names = Object.keys(characters)
     // const numCharacters = 4;
-    for (let i = 1; i <= numChar; i++) {
-        const charConcept = await getGpt3Response(`Describe the type and role of character ${i} in the novel.`);
-        const charBackstory = await getGpt3Response(`Generate a backstory for character ${i}.`);
-        const charTraits = await getGpt3Response(`List the physical features, personality traits, strengths, and weaknesses for character ${i}.`);
-        const charArc = await getGpt3Response(`Outline the character arc for character ${i}.`);
+    for (let i = 1; i <= char_names.length; i++) {
+        let current_character_name = char_names[i]
+        let current_character_object = characters[current_character_name]
+        const charConcept = await getGpt3Response(`Describe the type and role of character ${current_character_name} in the novel.`);
+        const charBackstory = await getGpt3Response(`Generate a backstory for character ${current_character_name}.`);
+        const charTraits = await getGpt3Response(`List the physical features, personality traits, strengths, and weaknesses for character ${current_character_name}.`);
+        const charArc = await getGpt3Response(`Outline the character arc for character ${current_character_name}.`);
 
-        characterData[`Character_${i}`] = {
+        characterData[`Character_${current_character_name}`] = {
             Concept: charConcept,
             Backstory: charBackstory,
             Traits: charTraits,
@@ -106,7 +143,7 @@ async function createBook(bookInfo) {
         };
     }
 
-    const conflicts = await getGpt3Response("Describe the primary and secondary conflicts in the novel.");
+    const conflicts = await getGpt3Response("Describe the primary and secondary conflicts in the novel given the outline ["+outline+"], characters ["+characterData+"].");
     const pacingTiming = await getGpt3Response("Determine the pacing for the novel.");
     const subplots = await getGpt3Response("Outline any subplots in the novel.");
     let numChapters = await getGpt3Response("Based on the book's outline [ " + outline + " ], conflicts [ " + conflicts + " ], pacing timing [ " + pacingTiming + " ], and subplots [ " + subplots + " ], how many chapters should the book have? The response to this prompt should only be the number representing the number of chapters, nothing else.");
@@ -199,13 +236,45 @@ async function fetchBookIdeasByGenreAndConcept(genre, concept, num_ideas=5){
     return await getGpt3Response(prompt);;
 }
 
+async function createSummaryContext(new_context){
+    // context
 
-async function getGpt3Response(prompt){
 
     try {
         const messages = [
-            { role: "system", content: "You are an expert AI author who has the ability to write with the style" +
-                    "and skill of any known or unknown author." },
+            { role: "Context Summarizer", content: "you " },
+            { role: "user", content: prompt }
+        ];
+
+        const chatCompletion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo", // You may need to use the model identifier relevant to you
+            messages: messages
+        });
+
+        const completionText = chatCompletion.choices[0].message.content;
+
+        // This line is just for demonstration, you can remove it
+        // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
+
+        return completionText;
+    } catch (error) {
+        if (error.response) {
+            console.error(error.response.status);
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+        return null; // or return a default message
+    }
+}
+
+
+async function getGpt3Response(prompt, is_context=false, prior_context=[]){
+    console.log(prompt);
+
+    try {
+        const messages = [
+            { role: "system", content: role_content },
             { role: "user", content: prompt }
         ];
 
@@ -230,6 +299,28 @@ async function getGpt3Response(prompt){
         return null; // or return a default message
     }
 };
+
+async function writeWithGPT3(messages) {
+    try {
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+                model: 'gpt-3.5-turbo', // or 'davinci-codex' or any other available model
+                messages: messages,
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'OpenAI-API-Key': 'YOUR_OPENAI_API_KEY',
+                },
+            }
+        );
+
+        console.log(response.data.choices[0].message.content.trim());
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 module.exports = {
     createBook,

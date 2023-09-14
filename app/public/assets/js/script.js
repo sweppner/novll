@@ -24,29 +24,11 @@ function handleFavoriteBookAndAuthorSubmit() {
     fetchBooks(author_name, book_title)
         .then(books => {
             let booksHtml = generateHTMLList(books);
+
             document.getElementById("book-ideas-list").innerHTML = booksHtml;
             addEventListenerById("create_book", handleCreateBook, "click");
             addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
 
-            addRadioButtonListeners()
-        })
-        .catch(error => console.error(`There was a problem with the fetch: ${error}`));
-}
-
-function handleFiveMoreConceptsSubmit() {
-    console.log('User requested 5 more book ideas.');
-    document.getElementById('book-ideas-list').innerHTML = '<h2>Loading...</h2>'
-
-    const author_name = document.getElementById("author_name").value;
-    const book_title = document.getElementById("book_title").value;
-
-    fetchBooks(author_name, book_title)
-        .then(books => {
-            let booksHtml = generateHTMLList(books);
-            document.getElementById("book-ideas-list").innerHTML = booksHtml;
-
-            addEventListenerById("create_book", handleCreateBook, "click");
-            addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
             addRadioButtonListeners()
         })
         .catch(error => console.error(`There was a problem with the fetch: ${error}`));
@@ -70,24 +52,40 @@ function addRadioButtonListeners(){
     });
 }
 
-function handleCreateBook() {
+function handleFiveMoreConceptsSubmit() {
+    console.log('User requested 5 more book ideas.');
+    document.getElementById('book-ideas-list').innerHTML = '<h2>Loading...</h2>'
+
+    const author_name = document.getElementById("author_name").value;
+    const book_title = document.getElementById("book_title").value;
+
+    fetchBooks(author_name, book_title)
+        .then(books => {
+            let booksHtml = generateHTMLList(books);
+            document.getElementById("book-ideas-list").innerHTML = booksHtml;
+
+            addEventListenerById("create_book", handleCreateBook, "click");
+            addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
+            addRadioButtonListeners()
+        })
+        .catch(error => console.error(`There was a problem with the fetch: ${error}`));
+}
+
+async function handleCreateBook() {
     console.log('Creating book!')
 
     const book_object = {
-        "title":document.getElementById("your_book_title").innerHTML,
-        "genre":document.getElementById("your_book_genre").innerHTML,
-        "num_chapters":document.getElementById("your_book_chapters").innerHTML,
-        "synopsis":document.getElementById("your_book_synopsis").innerHTML,
+        "title": document.getElementById("your_book_title").innerHTML,
+        "genre": document.getElementById("your_book_genre").innerHTML,
+        "num_chapters": document.getElementById("your_book_chapters").innerHTML,
+        "synopsis": document.getElementById("your_book_synopsis").innerHTML,
     }
 
-    fetch('/build/book', {
+    await fetch(full_base_url + '/build/book', {
+        // mode: 'no-cors',
         method: 'POST',
-        mode: 'cors', // this cannot be 'no-cors'
-        headers: {
-            'Accept': 'application/json',
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(book_object), // body data type must match "Content-Type" header
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(book_object)
     })
         .then(response => response.json())
         .then(data => {
@@ -96,12 +94,13 @@ function handleCreateBook() {
         .catch(error => console.error('Error:', error));
 }
 
-function fetchBooks(authorName, bookTitle) {
+async function fetchBooks(authorName, bookTitle) {
     const query_url = buildQueryUrl(authorName, bookTitle);
 
-    return fetch(query_url, { mode: 'no-cors', method: 'GET' })
+    return await fetch(query_url, {mode: 'no-cors', method: 'GET'})
         .then(response => {
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            console.log(response)
             return response.json();
         })
         .then(data => Object.values(data));
@@ -115,7 +114,6 @@ function buildQueryUrl(authorName, bookTitle) {
 
 function generateHTMLList(books) {
     let html = '<form>';
-    console.log(books)
     books.forEach(book => {
         const { title, genre, concept, synopsis } = book;
         html += `
@@ -127,7 +125,6 @@ function generateHTMLList(books) {
             </label>`;
     });
     html += '</form><input id="num_chapters" type="text" name="num-chapters" value="10" placeholder="How many chapters?" />';
-    html += '<input type="button" id="create_book_submit" name="next" value="Generate Book!" />';
-    html += '<input type="button" id="5_more_concepts_submit" name="next" value="Five More Book Ideas" />';
+    html += '<input type="button" id="5_more_concepts_submit" name="next" value="Create Five More Book Ideas" />';
     return html;
 }

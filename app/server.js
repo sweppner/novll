@@ -13,6 +13,7 @@ const bodyParser = require('body-parser');
 
 // Enable logging
 app.use(morgan('dev'));
+app.use(express.json());
 
 // Grab all the models
 fs.readdirSync(__dirname + '/models').forEach(function(filename){
@@ -132,12 +133,9 @@ app.get('/ideas/genre_concept', async (req, res) => {
 //build book by selected concept
 app.post('/build/book', async (req, res) => {
     const jsonInput = req.body; // Get JSON payload
-    console.log('req')
-    console.log(req)
-    console.log('jsonInput')
-    console.log(jsonInput)
+    // console.log(req.body);
 
-    if(jsonInput && jsonInput.name){
+    if (jsonInput && jsonInput.title && jsonInput.genre && jsonInput.num_chapters && jsonInput.synopsis) {
         // Construct and return a string response
         const response = `Hello, ${jsonInput.name}! Your JSON object has been processed.`;
         try {
@@ -191,17 +189,16 @@ app.get('/', (req, res) => {
 
 
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*"); // Replace '*' with specific origins if needed
+    res.header(
+        "Access-Control-Allow-Origin",
+        "*"
+    ); // Replace '*' with specific origins if needed
     res.header(
         "Access-Control-Allow-Headers",
         "Origin, X-Requested-With, Content-Type, Accept"
     );
-    res.header('Access-Control-Allow-Methods', 'POST')
     next();
 });
-
-app.use(bodyParser.json()); // <-- this guy!
-
 
 // rest listener
 app.listen(port, () => {
