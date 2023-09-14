@@ -10,27 +10,52 @@ const directory = "../web/html-landing-page/landing.html"
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const passport = require("passport");
+const MongoStore = require("connect-mongo");
+const session = require("express-session");
 
 // Enable logging
 app.use(morgan('dev'));
 app.use(express.json());
 
+
 // Grab all the models
 fs.readdirSync(__dirname + '/models').forEach(function(filename){
     if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
 });
+fs.readdirSync(__dirname + '/routes').forEach(function(filename){
+    filename = filename.slice(0, -3);
+    filename = require('./routes/' + filename + '.js');
+    app.use('/api', filename);
+});
 // connect to the db
 const mongodb_db_name = "NovelDB"
 const mongodb_collection = "novels"
-// mongoose.connect("mongodb+srv://admin:<password>@serverlessinstance0.e8wmahg.mongodb.net/NovelDB?retryWrites=true&w=majority", {useNewUrlParser: true, useUnifiedTopology: true,  authSource:'admin'});
+const db = "mongodb+srv://mongoose:xCnuM2AVG4RxYZyA@serverlessinstance0.e8wmahg.mongodb.net/NovelDB?retryWrites=true&w=majority";
+mongoose.connect(db, {useNewUrlParser: true, useUnifiedTopology: true,  authSource:'admin'});
 
-//
-fs.readdirSync(__dirname + '/routes').forEach(function(filename){
-    // filename = filename.slice(0, -3);
-    // filename = require('./routes/' + filename + '.js');
-    if (~filename.indexOf('.js')) require(__dirname + '/routes/' + filename);
+app.use(
+    session({
+      secret: 'novllsecret-REPLACE-ME-LATER',
+      resave: false,
+      saveUninitialized: true,
+      cookie: {
+        // secure: true,
+        httpOnly: true,
+      },
+      store: MongoStore.create({
+        mongoUrl: db,
+      }),
+    })
+);
 
-});
+//for passportjs authentication
+app.use(passport.initialize());
+app.use(passport.session());
+require("./middleware/passport.js");
+
+app.post('/api/register', (req, res, next)=>{res.send('hi')})
+
 
 //get book ideas by book title
 app.get('/ideas/title', async (req, res) => {
@@ -199,6 +224,7 @@ app.use((req, res, next) => {
     );
     next();
 });
+
 
 // rest listener
 app.listen(port, () => {

@@ -91,13 +91,12 @@ module.exports = configure(function (/* ctx */) {
       open: true, // opens browser window automatically
       proxy: {
         "/api": {
-          // target: 'http://172.17.0.1:8000', // Inside Docker
           target: "http://localhost:3000",
           ws: true,
           changeOrigin: true,
-          secure:true,
+          secure:false,
           pathRewrite: {
-            '/api': ''
+            '^/api': ''
           },
           logLevel: "debug",
         },
