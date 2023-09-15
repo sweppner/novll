@@ -24,6 +24,7 @@ passport.use(
       passReqToCallback: true,
     },
     async (req, email, password, done) => {
+      
       try {
         let user = await User.findOne({ email });
         //if email does not exist in database
@@ -55,6 +56,7 @@ passport.use(
     },
 
     async (req, email, password, done) => {
+      console.log(email,password)
       try {
         //first validate the inputs
         if ( !email || !password)
@@ -66,12 +68,14 @@ passport.use(
 
         //hash password and register the user to database
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log(hashedPassword)
         const newUser = User({
           email: email,
           password: hashedPassword,
           uuid: uuid.v4(),
         });
         user = await User.create(newUser);
+        console.log('user:', user)
         return done(null, user, {
           message: "user registered successfully",
         });
@@ -155,7 +159,8 @@ passport.use(
 //During "serializeUser", the PassportJS library adds the authenticated user to end of the "req.session.passport" object.
 //example: req.session.passport.{id: 123, name: Al}
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  console.log('cereal', user)
+  done(null, user._id);
 });
 
 //Deserialize takes the data stored at the end of the req.session.passport and attaches it to req.user

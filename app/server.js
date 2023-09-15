@@ -23,11 +23,7 @@ app.use(express.json());
 fs.readdirSync(__dirname + '/models').forEach(function(filename){
     if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
 });
-fs.readdirSync(__dirname + '/routes').forEach(function(filename){
-    filename = filename.slice(0, -3);
-    filename = require('./routes/' + filename + '.js');
-    app.use('/api', filename);
-});
+
 // connect to the db
 const mongodb_db_name = "NovelDB"
 const mongodb_collection = "novels"
@@ -53,7 +49,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 require("./middleware/passport.js");
-
+fs.readdirSync(__dirname + '/routes').forEach(function(filename){
+    filename = filename.slice(0, -3);
+    filename = require('./routes/' + filename + '.js');
+    app.use('/api', filename);
+});
 app.post('/api/register', (req, res, next)=>{res.send('hi')})
 
 
