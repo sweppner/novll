@@ -4,8 +4,22 @@ q-page.flex.flex-center
     QCardSection
       .row
         .col-12
-          q-input( v-model="email" label="Email")
-          q-input( v-model="password" type="password" label="Password")
+          q-input(
+            v-model="v$.email.$model"
+            label="Email"
+            type="email"
+            lazy-rules
+            :reactive-rules="true"
+            :error="v$.email.$error"
+            )
+          q-input(
+            v-model="v$.password.$model"
+            lazy-rules
+            :reactive-rules="true"
+            :error="v$.email.$error"
+            type="password"
+            label="Password"
+          )
       .row
         .col-12.text-right.q-mt-lg
           q-btn( @click="submit" color="primary" label="Login" )
@@ -13,6 +27,12 @@ q-page.flex.flex-center
 
 <script>
 import { defineComponent } from 'vue'
+import { useVuelidate } from '@vuelidate/core'
+import {
+  email,
+  required,
+  minLength
+} from '@vuelidate/validators'
 
 export default defineComponent({
   name: 'Auth',
@@ -24,9 +44,32 @@ export default defineComponent({
   },
   methods:{
     async submit(){
-      let {data} = await this.$axios.post('/api/register',{email:this.email, password:this.password})
-      console.log(data)
+      let valid = await this.v$.$validate()
+      if(valid){
+        let {data} = await this.$axios.post('/api/register',{email:this.email, password:this.password})
+        if(data) console.log('success')
+      }
+    }
+  },
+  validations(){
+    return{
+      email:{
+        email,
+        required,
+        $autoDirty:true
+      },
+      password:{
+        required,
+        minLength:minLength(5),
+        $autoDirty:true
+      },
+    }
+  },
+  setup(){
+    return{
+      v$: useVuelidate({}),
     }
   }
+
 })
 </script>
