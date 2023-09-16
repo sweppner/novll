@@ -3,6 +3,7 @@ const OpenAIApi = require("openai");
 const fs = require('fs').promises;
 const uuid = require('uuid');
 const axios = require('axios');
+const gpt_version = 'gpt-3.5-turbo-16k'
 
 require('dotenv').config();
 let context = ""
@@ -81,6 +82,17 @@ async function getBookByID(field, value) {
     }
 }
 
+function extractJSONFromString(str) {
+    const startIndex = str.indexOf('{');
+    const endIndex = str.lastIndexOf('}') + 1;
+
+    if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
+        return null; // Return null if there are no valid JSON strings
+    }
+
+    console.log(str.substring(startIndex, endIndex))
+    return JSON.parse(str.substring(startIndex, endIndex));
+}
 
 const openai = new OpenAIApi({
     apiKey: process.env.OPENAI_API_KEY // This is also the default, can be omitted
@@ -92,100 +104,283 @@ async function generateContent(prompt) {
     const response = await openai.completions.create({
         prompt,
         max_tokens: maxTokens,
-        model: "gpt-3.5-turbo"
+        model: gpt_version
     });
     return response.choices[0].text.trim();
 }
 
 async function createBook(bookInfo) {
-    const characterData = {};
-    const draft = [];
 
-    console.log(bookInfo)
+    const messages = [
+        { role: "system", content: role_content },
+    ];
+        // const conceptValidation = await getGpt3Response('Validate the concept for the novel:'+bookInfo['concept'];
+    let outlinePrompt = "Write a comprehensive outline for the book \""+bookInfo['title']+"\" based on" +
+        " the following synopsis: ["+bookInfo["synopsis"]+"]. This should include a genre, a list of settings, a " +
+        "list of characters with descriptions of each character, a chapter-by-chapter breakdown, an epilogue " +
+        "description, and a list of appendices."
+    const outline = await getGpt3Response(outlinePrompt, true, messages);
 
-
-    // const conceptValidation = await getGpt3Response('Validate the concept for the novel:'+bookInfo['concept'];
-    const themeExploration = await getGpt3Response("Identify themes that the novel \""+bookInfo['title']+"\" will explore based on the following synopsis: ["+bookInfo["synopsis"]+"]", true);
+    // console.log('outline')
+    // console.log(outline)
 
     messages.push({
+        role:'user', content: outlinePrompt,
+        role: 'assistant', content: outline
+    });
 
-    })
-    console.log('themeExploration')
-    console.log(themeExploration)
-    const outline = await getGpt3Response("Create a detailed outline, chapter by chapter, for the novel for a book containing "+bookInfo['num_chapters']+" chapters based on the synopsis ["+bookInfo['synopsis']+"] and literary themes ["+themeExploration+"]. Structure the outline as a JSON object, where the keys are the chapter numbers and the values are the detailed chapter descriptions.");
-    console.log('outline')
-    console.log(outline)
-    const characters_string = await getGpt3Response("Based on the outline [ " + outline + " ] determine the " +
-        "number of characters the story should include and respond to this prompt with a JSON object where they key " +
-        "is the character name and the value is a JSON object where the first key is \'description\' and the " +
-        "corresponding value is the character description, and the second key is \'introduced\' and the value is a " +
-        "JSON object where the first key is \'chapter\' with a corresponding value that is the chapter the character " +
-        "is introduced and the second key is \'scenario\' with a value of a description of the scenario in which the " +
-        "character is introduced .")
-    let characters = JSON.parse(characters_string)
-    console.log('characters')
-    console.log(characters)
-    let char_names = Object.keys(characters)
-    // const numCharacters = 4;
-    for (let i = 1; i <= char_names.length; i++) {
-        let current_character_name = char_names[i]
-        let current_character_object = characters[current_character_name]
-        const charConcept = await getGpt3Response(`Describe the type and role of character ${current_character_name} in the novel.`);
-        const charBackstory = await getGpt3Response(`Generate a backstory for character ${current_character_name}.`);
-        const charTraits = await getGpt3Response(`List the physical features, personality traits, strengths, and weaknesses for character ${current_character_name}.`);
-        const charArc = await getGpt3Response(`Outline the character arc for character ${current_character_name}.`);
+    let outlineJSONPrompt = "Create a JSON object based on this outline ["+outline+"] that contains a key for each chapter, for the following" +
+        "keys and values:" +
+        "\"genre\": (string) the genre," +
+        "\"settings\": (array) an array of strings, each string describing one of the settings in detail," +
+        "\"characters\": (JSON) a JSON object where each key is the name of a main character who's values are strings descriptions," +
+        "\"epilogue\": (string) a detailed description of the epilogue," +
+        "\"appendices\": (array) an array of strings with a description of each member of the appendix," +
+        "\"chapters\": (JSON) a JSON object with a key for each chapter number, where the value is a JSON object with the following keys and values: " +
+        "\"title\": (string) the title of the chapter," +
+        "\"description\": (array) an array of strings that are the descriptive sentences of the chapter";
+    const outlineJSONString = await getGpt3Response(outlineJSONPrompt, true, messages);
 
-        characterData[`Character_${current_character_name}`] = {
-            Concept: charConcept,
-            Backstory: charBackstory,
-            Traits: charTraits,
-            Arc: charArc
-        };
+    messages.push({
+        role:'user', content: outlineJSONPrompt,
+        role: 'assistant', content: outlineJSONString
+    });
+
+    const outlineJSON = extractJSONFromString(outlineJSONString)
+
+    let chapter_list = Object.keys(outlineJSON['chapters'])
+    let book = {}
+    for(let chapter_index = 1; chapter_index < chapter_list.length; chapter_index ++){
+        let chapterString = chapter_index.toString()
+        let chapterObject = outlineJSON['chapters'][chapterString]
+        let chapterTitle = chapterObject['title']
+        let chapterDescription = chapterObject['description']
+
+        let chapterPrompt = "Write chapter "+chapterString+" in its' entirety. The title of the chapter " +
+            "is \""+chapterTitle+"\" and the description is: "+chapterDescription;
+        const chapter = await getGpt3Response(chapterPrompt, true, messages);
+
+        // console.log('outline')
+        // console.log(outline)
+
+        messages.push({
+            role:'user', content: chapterPrompt,
+            role: 'assistant', content: chapter
+        });
+
+        book[chapterString] = {
+            "title": chapterTitle,
+            "description": chapterDescription,
+            "text": chapter
+        }
     }
 
-    const conflicts = await getGpt3Response("Describe the primary and secondary conflicts in the novel given the outline ["+outline+"], characters ["+characterData+"].");
-    const pacingTiming = await getGpt3Response("Determine the pacing for the novel.");
-    const subplots = await getGpt3Response("Outline any subplots in the novel.");
-    let numChapters = await getGpt3Response("Based on the book's outline [ " + outline + " ], conflicts [ " + conflicts + " ], pacing timing [ " + pacingTiming + " ], and subplots [ " + subplots + " ], how many chapters should the book have? The response to this prompt should only be the number representing the number of chapters, nothing else.");
-
-
-
-    if(!bookInfo.exists('num_chapters')){
-        numChapters = bookInfo['num_chapters']
-    }
-
-    for (let i = 1; i <= numChapters; i++) {
-        const chapterDraft = await getGpt3Response(`Write the draft for Chapter ${i} based on the outline.`);
-        draft.push(chapterDraft);
-    }
-
-    const climax = await getGpt3Response("Describe the climax of the novel.");
-    const resolution = await getGpt3Response("Explain how the novel will conclude.");
-
-    let fullBook = `Title: ${bookInfo.title}\n\nSynopsis: ${bookInfo.synopsis}\n\n=== Characters ===\n`;
-
-    for (const char in characterData) {
-        fullBook += `\n${char}\nConcept: ${characterData[char].Concept}\nBackstory: ${characterData[char].Backstory}\nTraits: ${characterData[char].Traits}\nArc: ${characterData[char].Arc}\n`;
-    }
-
-    fullBook += `\n=== Outline ===\n${outline}\n\n=== Conflicts ===\n${conflicts}\n\n=== Pacing ===\n${pacingTiming}\n\n=== Subplots ===\n${subplots}\n\n=== Chapters ===\n`;
-
-    for (let i = 0; i < draft.length; i++) {
-        fullBook += `\nChapter ${i + 1}\n${draft[i]}\n`;
-    }
-
-    fullBook += `\n=== Climax ===\n${climax}\n\n=== Resolution ===\n${resolution}`;
-
-    let bookObject = {
-        'bookInfo': bookInfo,
-        'fullBook': fullBook
-    }
-
-    let bookID = await writeToMongo(bookObject)
-    await fs.writeFile(`${bookInfo.title}.txt`, fullBook);
-
-    return bookID;
+    return book;
 }
+
+// async function createBook(bookInfo) {
+//     const characterData = {};
+//     const draft = [];
+//
+//     console.log(bookInfo)
+//     const messages = [
+//         { role: "system", content: role_content },
+//     ];
+//
+//     // const conceptValidation = await getGpt3Response('Validate the concept for the novel:'+bookInfo['concept'];
+//     let themeExplorationPrompt = "Identify themes that the novel \""+bookInfo['title']+"\" will explore based on the following synopsis: ["+bookInfo["synopsis"]+"]"
+//     const themeExploration = await getGpt3Response(themeExplorationPrompt, true, messages);
+//
+//     console.log('themeExploration')
+//     console.log(themeExploration)
+//
+//     messages.push({
+//         role:'user', content: themeExplorationPrompt,
+//         role: 'assistant', content: themeExploration
+//     });
+//
+//     let outlinePrompt = "Create a detailed outline, chapter by chapter, for the novel for a book " +
+//         "containing "+bookInfo['num_chapters']+" chapters based on the synopsis ["+bookInfo['synopsis']+"] and " +
+//         "literary themes ["+themeExploration+"]. Structure the outline as a JSON object, where the keys are " +
+//         "the chapter numbers and the values are the detailed chapter descriptions.";
+//
+//     const outline = await getGpt3Response(outlinePrompt, true, messages);
+//     const outline_json = extractJSONFromString(outline)
+//
+//     console.log('outline')
+//     console.log(outline)
+//
+//     messages.push({
+//         role:'user', content: outlinePrompt,
+//         role: 'assistant', content: outline
+//     });
+//
+//     // const outlineObject = JSON.parse(outline)
+//
+//
+//     let characterPrompt = "Based on the outline  determine the " +
+//         "number of characters the story should include and respond to this prompt with a JSON object where they key " +
+//         "is the character name and the value is a JSON object where the first key is \'description\' and the " +
+//         "corresponding value is the character description, and the second key is \'introduced\' and the value is a " +
+//         "JSON object where the first key is \'chapter\' with a corresponding value that is the chapter the character " +
+//         "is introduced and the second key is \'scenario\' with a value of a description of the scenario in which the " +
+//         "character is introduced .";
+//     const characters_string = await getGpt3Response(characterPrompt, true, messages)
+//
+//     messages.push({
+//         role:'user', content: characterPrompt,
+//         role: 'assistant', content: characters_string
+//     });
+//
+//     console.log('characters_string')
+//     console.log(characters_string)
+//
+//     let characters = extractJSONFromString(characters_string)
+//
+//     let char_names = Object.keys(characters)
+//     // const numCharacters = 4;
+//     for (let i = 1; i <= char_names.length; i++) {
+//         let current_character_name = char_names[i]
+//         let current_character_object = characters[current_character_name]
+//
+//         const characterConceptPrompt = `Describe the type and role of character ${current_character_name} in the novel.`;
+//         const characterConcept = await getGpt3Response(characterConceptPrompt, true, messages);
+//
+//         messages.push({
+//             role:'user', content: characterConceptPrompt,
+//             role: 'assistant', content: characterConcept
+//         });
+//
+//         // const characterBackstoryPrompt = `Generate a backstory for character ${current_character_name}.`;
+//         // const characterBackstory = await getGpt3Response(characterBackstoryPrompt, true, messages);
+//         //
+//         // messages.push({
+//         //     role:'user', content: characterBackstoryPrompt,
+//         //     role: 'assistant', content: characterBackstory
+//         // });
+//         // const characterTraitsPrompt = `List the physical features, personality traits, strengths, and weaknesses for character ${current_character_name}.`
+//         // const characterTraits = await getGpt3Response(characterTraitsPrompt, true, messages);
+//         //
+//         // messages.push({
+//         //     role:'user', content: characterTraitsPrompt,
+//         //     role: 'assistant', content: characterTraits
+//         // });
+//
+//         const characterArcPrompt = `Outline the character arc for character ${current_character_name}.`
+//         const characterArc = await getGpt3Response(characterArcPrompt, true, messages);
+//
+//         messages.push({
+//             role:'user', content: characterArcPrompt,
+//             role: 'assistant', content: characterArc
+//         });
+//
+//         characterData[`Character_${current_character_name}`] = {
+//             Concept: characterConcept,
+//             // Backstory: characterBackstory,
+//             // Traits: characterTraits,
+//             Arc: characterArc
+//         };
+//     }
+//
+//     const conflictsPrompt = "Describe the primary and secondary conflicts in the novel given the outline ["+outline+"], characters ["+characterData+"].";
+//     const conflicts = await getGpt3Response(conflictsPrompt, true, messages);
+//
+//     messages.push({
+//         role:'user', content: conflictsPrompt,
+//         role: 'assistant', content: conflicts
+//     });
+//
+//     const pacingTimingPrompt = "Determine the pacing for the novel."
+//     const pacingTiming = await getGpt3Response(pacingTimingPrompt, true, messages);
+//
+//     messages.push({
+//         role:'user', content: pacingTimingPrompt,
+//         role: 'assistant', content: pacingTiming
+//     });
+//
+//     const subplotsPrompt = "Outline any subplots in the novel."
+//     const subplots = await getGpt3Response(subplotsPrompt, true, messages);
+//
+//     messages.push({
+//         role:'user', content: subplotsPrompt,
+//         role: 'assistant', content: subplots
+//     });
+//
+//     // let numChaptersPrompt = "Based on the book's outline, conflicts," +
+//     //     " pacing timing, and subplots, how many chapters should the" +
+//     //     " book have? The response to this prompt should only be the number representing the number of chapters, " +
+//     //     "nothing else."
+//     // let numChapters = await getGpt3Response(numChaptersPrompt, true, messages);
+//     //
+//     // messages.push({
+//     //     role:'user', content: numChaptersPrompt,
+//     //     role: 'assistant', content: numChapters
+//     // });
+//
+//     // TODO: Figure out how to integrate this. add a toggle to allow the user to add or not add this value.
+//     // if(!bookInfo.exists('num_chapters')){
+//     //     numChapters = bookInfo['num_chapters']
+//     // }
+//     const climaxPrompt = "Describe the climax of the novel."
+//     const climax = await getGpt3Response(climaxPrompt, true, messages);
+//
+//     messages.push({
+//         role:'user', content: climaxPrompt,
+//         role: 'assistant', content: climax
+//     });
+//
+//     const resolutionPrompt = "Explain how the novel will conclude."
+//     const resolution = await getGpt3Response(resolutionPrompt, true, messages);
+//
+//     messages.push({
+//         role:'user', content: resolutionPrompt,
+//         role: 'assistant', content: resolution
+//     });
+//
+//     const chapters = Object.keys(outline_json)
+//
+//     for (let i = 1; i <= chapters.length; i++) {
+//
+//
+//         const chapterDraftPrompt = `Write Chapter ${i} based on all of the prior work including outline, conflicts," +
+//         " pacing timing, and subplots, characters, character back-stories, and character arcs.`;
+//         const chapterDraft = await getGpt3Response(chapterDraftPrompt, true, messages);
+//
+//         messages.push({
+//             role:'user', content: chapterDraftPrompt,
+//             role: 'assistant', content: chapterDraft
+//         });
+//
+//         draft.push(chapterDraft);
+//     }
+//
+//
+//
+//
+//     let fullBook = `Title: ${bookInfo.title}\n\nSynopsis: ${bookInfo.synopsis}\n\n=== Characters ===\n`;
+//
+//     for (const char in characterData) {
+//         fullBook += `\n${char}\nConcept: ${characterData[char].Concept}\nBackstory: ${characterData[char].Backstory}\nTraits: ${characterData[char].Traits}\nArc: ${characterData[char].Arc}\n`;
+//     }
+//
+//     fullBook += `\n=== Outline ===\n${outline}\n\n=== Conflicts ===\n${conflicts}\n\n=== Pacing ===\n${pacingTiming}\n\n=== Subplots ===\n${subplots}\n\n=== Chapters ===\n`;
+//
+//     for (let i = 0; i < draft.length; i++) {
+//         fullBook += `\nChapter ${i + 1}\n${draft[i]}\n`;
+//     }
+//
+//     fullBook += `\n=== Climax ===\n${climax}\n\n=== Resolution ===\n${resolution}`;
+//
+//     let bookObject = {
+//         'bookInfo': bookInfo,
+//         'fullBook': fullBook
+//     }
+//
+//     let bookID = await writeToMongo(bookObject)
+//     await fs.writeFile(`${bookInfo.title}.txt`, fullBook);
+//
+//     return bookObject;
+// }
 
 //Get book ideas from ChatGPT, by author, title, or both.
 
@@ -237,9 +432,6 @@ async function fetchBookIdeasByGenreAndConcept(genre, concept, num_ideas=5){
 }
 
 async function createSummaryContext(new_context){
-    // context
-
-
     try {
         const messages = [
             { role: "Context Summarizer", content: "you " },
@@ -247,7 +439,7 @@ async function createSummaryContext(new_context){
         ];
 
         const chatCompletion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo", // You may need to use the model identifier relevant to you
+            model: gpt_version, // You may need to use the model identifier relevant to you
             messages: messages
         });
 
@@ -269,21 +461,31 @@ async function createSummaryContext(new_context){
 }
 
 
-async function getGpt3Response(prompt, is_context=false, prior_context=[]){
-    console.log(prompt);
+async function getGpt3Response(prompt, is_context=false, messages=[]){
+    console.log('Prompt: '+prompt.substring(0, 50)+'...');
+
+    if(is_context){
+        messages.push({
+            role: "user", content: prompt
+        })
+    }else{
+        messages = [    { role: "system", content: role_content },
+            { role: "user", content: prompt }]
+    }
+
+    console.log('messages')
+    console.log(messages)
 
     try {
-        const messages = [
-            { role: "system", content: role_content },
-            { role: "user", content: prompt }
-        ];
-
         const chatCompletion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo", // You may need to use the model identifier relevant to you
+            model: gpt_version, // You may need to use the model identifier relevant to you
             messages: messages
         });
 
         const completionText = chatCompletion.choices[0].message.content;
+
+        console.log('completionText')
+        console.log(completionText)
 
         // This line is just for demonstration, you can remove it
         // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
@@ -299,28 +501,28 @@ async function getGpt3Response(prompt, is_context=false, prior_context=[]){
         return null; // or return a default message
     }
 };
-
-async function writeWithGPT3(messages) {
-    try {
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-                model: 'gpt-3.5-turbo', // or 'davinci-codex' or any other available model
-                messages: messages,
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'OpenAI-API-Key': 'YOUR_OPENAI_API_KEY',
-                },
-            }
-        );
-
-        console.log(response.data.choices[0].message.content.trim());
-    } catch (error) {
-        console.error(error);
-    }
-}
+//
+// async function writeWithGPT3(messages) {
+//     try {
+//         const response = await axios.post(
+//             'https://api.openai.com/v1/chat/completions',
+//             {
+//                 model: 'gpt-3.5-turbo', // or 'davinci-codex' or any other available model
+//                 messages: messages,
+//             },
+//             {
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'OpenAI-API-Key': 'YOUR_OPENAI_API_KEY',
+//                 },
+//             }
+//         );
+//
+//         // console.log(response.data.choices[0].message.content.trim());
+//     } catch (error) {
+//         console.error(error);
+//     }
+// }
 
 module.exports = {
     createBook,

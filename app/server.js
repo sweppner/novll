@@ -35,7 +35,7 @@ fs.readdirSync(__dirname + '/routes').forEach(function(filename){
 //get book ideas by book title
 app.get('/ideas/title', async (req, res) => {
     const bookName = req.query.name;
-    res.setHeader('Content-Type', 'application/json');
+    // res.setHeader('Content-Type', 'application/json');
     if (!bookName) {
         res.status(400).send('Please provide a book name');
         return;
@@ -91,7 +91,6 @@ app.get('/ideas/author_title', async (req, res) => {
         const bookIdeas = await NovllAuthor.fetchBookIdeasByBookAndAuthor(authorName, bookTitle);
         // console.log(bookIdeas)
         console.log("Obtained ideas.")
-        console.log("Obtained ideas.")
 
         const obj = {}
         try {
@@ -110,8 +109,8 @@ app.get('/ideas/author_title', async (req, res) => {
 
 //get book ideas by genre and concept
 app.get('/ideas/genre_concept', async (req, res) => {
-    const book_genre = req.query.genre;
-    const book_concept = req.query.concept;
+    const book_genre = req.query['genre'];
+    const book_concept = req.query['concept'];
 
     if (!book_genre || !book_concept) {
         res.status(400).send('Please provide a book name');
@@ -134,13 +133,15 @@ app.get('/ideas/genre_concept', async (req, res) => {
 app.post('/build/book', async (req, res) => {
     const jsonInput = req.body; // Get JSON payload
     // console.log(req.body);
+    // res.setHeader('Content-Type', 'application/json');
 
     if (jsonInput && jsonInput.title && jsonInput.genre && jsonInput.num_chapters && jsonInput.synopsis) {
         // Construct and return a string response
-        const response = `Hello, ${jsonInput.name}! Your JSON object has been processed.`;
+        let response = `Your JSON object has been processed.`;
         try {
             // Wait for the asynchronous function to complete
             const book = await NovllAuthor.createBook(jsonInput);
+            response = JSON.stringify(book)
 
             // Send the response back to the client
             res.status(200).send(book);
