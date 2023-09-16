@@ -16,10 +16,8 @@ const schemaOptions = {
 
 
 const userSchema = new Schema({
-	native: {
-		email: 		String,
-    password: String
-  },
+	email:String,
+	password:String,
   facebook: {
   	email: String,
     id: 	 String,
@@ -32,15 +30,8 @@ const userSchema = new Schema({
 	lastName: 						String,
 	dob: 				    			Date,
 	biography: 						String,
-	
-	
-	
-	
 	photo: 								{ type: String},
-	
-  
 	lastLogin:            { type: Date, default: Date.now },
-	
 }, schemaOptions);
 
 // for review populate

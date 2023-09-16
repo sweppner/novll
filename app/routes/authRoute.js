@@ -4,6 +4,7 @@ const User = require('../models/userModel');
 const loginCheck = require('../middleware/loginCheck');
 const passport = require("passport");
 
+const jsonPayload = { msg: null };
 
 router.post('/register', (req, res, next)=>{
   passport.authenticate("local-signup", (err, user, info) => {
