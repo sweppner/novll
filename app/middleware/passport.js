@@ -30,16 +30,16 @@ passport.use(
         //if email does not exist in database
         if (!user) {
           return done(null, false, {
-            message: "user not registered",
+            message: "User not registered",
           });
         }
         //if email exists in database, we check password match
         const isMatch = await bcrypt.compare(password, user.password);
         return isMatch
-          ? done(null, user, { message: "user logged in" })
-          : done(null, false, { message: "incorrect password" });
+          ? done(null, user, { message: "User logged in" })
+          : done(null, false, { message: "Incorrect username or password" });
       } catch (err) {
-        return done(err, false, { message: "there was an error" });
+        return done(err, false, { message: "There was an error" });
       }
     }
   )
@@ -60,27 +60,25 @@ passport.use(
       try {
         //first validate the inputs
         if ( !email || !password)
-          return done(null, false, { message: "missing fields" });
+          return done(null, false, { message: "Missing fields" });
 
         //then look for email in database, return if user already exists
         let user = await User.findOne({ email });
-        if (user) return done(null, false, { message: "user exists" });
+        if (user) return done(null, false, { message: "User exists" });
 
         //hash password and register the user to database
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(hashedPassword)
         const newUser = User({
           email: email,
           password: hashedPassword,
           uuid: uuid.v4(),
         });
         user = await User.create(newUser);
-        console.log('user:', user)
         return done(null, user, {
-          message: "user registered successfully",
+          message: "Registered successfully",
         });
       } catch (err) {
-        return done(err, false, { message: "there was an error" });
+        return done(err, false, { message: "There was an error" });
       }
     }
   )
@@ -166,9 +164,11 @@ passport.serializeUser((user, done) => {
 //Deserialize takes the data stored at the end of the req.session.passport and attaches it to req.user
 //example: req.user.{id: 123, name: Al}
 //"req.user" will now contain the authenticated user object for that session, to be used in any of the routes.
-passport.deserializeUser((id, done) => {
-  User.findById(id, (err, user) => {
+passport.deserializeUser(async (id, done) => {
+  try{
+    let user = await User.findById(id)
+    done(null, user);    
+  }catch(err){
     if (err) return done(err);
-    done(null, user);
-  });
+  }
 });

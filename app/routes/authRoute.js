@@ -28,7 +28,7 @@ router.post('/register', (req, res, next)=>{
       jsonPayload.uuid = user.uuid;
       req.logIn(user, function (err) {
         if (err) {
-          console.log(err);
+          console.log('err',err);
           res.send(err);
         }
         return res.status(200).json(jsonPayload);

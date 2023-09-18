@@ -1,15 +1,24 @@
 <template lang="pug">
-q-page( class="flex flex-center")
-  img(
-    alt="Quasar logo"
-    src="~assets/quasar-logo-vertical.svg"
-    style="width: 200px; height: 200px")
+q-page( class="")
+  div(v-for="(chapter,value) in book")
+    h5 {{ chapter.title }}
+    h6 {{ chapter.description[0] }}
+    p {{ chapter.text }}
 </template>
 
 <script>
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'IndexPage'
+  name: 'IndexPage',
+  data(){
+    return{
+      book:null,
+    }
+  },
+  async mounted(){
+    let {data} = await this.$axios.get('/api/index')
+    this.book =data
+  }
 })
 </script>
