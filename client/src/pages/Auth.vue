@@ -1,28 +1,30 @@
 <template lang="pug">
-q-page.flex.flex-center
-  q-card.q-pa-md.row.items-start.q-gutter-md.column
-    QCardSection
-      .row
-        .col-12
-          q-input(
-            v-model="v$.email.$model"
-            label="Email"
-            type="email"
-            lazy-rules
-            :reactive-rules="true"
-            :error="v$.email.$error"
-            )
-          q-input(
-            v-model="v$.password.$model"
-            lazy-rules
-            :reactive-rules="true"
-            :error="v$.email.$error"
-            type="password"
-            label="Password"
-          )
-      .row
-        .col-12.text-right.q-mt-lg
-          q-btn( @click="submit" color="primary" label="Login" )
+q-page
+  .row.flex.flex-center
+    .col-4.q-mt-xl
+      q-card.q-pa-md
+        q-card-section
+          .row
+            .col-12
+              q-input(
+                v-model="v$.email.$model"
+                label="Email"
+                type="email"
+                lazy-rules
+                :reactive-rules="true"
+                :error="v$.email.$error"
+                )
+              q-input(
+                v-model="v$.password.$model"
+                lazy-rules
+                :reactive-rules="true"
+                :error="v$.email.$error"
+                type="password"
+                label="Password"
+              )
+          .row
+            .col-12.text-right.q-mt-lg
+              q-btn( @click="submit" color="primary" label="Login" )
 </template>
 
 <script>
@@ -38,16 +40,21 @@ export default defineComponent({
   name: 'Auth',
   data(){
     return{
-      email:'abc',
-      password:'123',
+      email:'',
+      password:'',
     }
   },
   methods:{
     async submit(){
       let valid = await this.v$.$validate()
       if(valid){
-        let {data} = await this.$axios.post('/api/register',{email:this.email, password:this.password})
-        if(data) console.log('success')
+        try{
+          let {data} = await this.$axios.post('/api/login',{email:this.email, password:this.password})
+          this.$q.notify({type:'positive',message:"Success"})
+        }catch(err){
+          if(err.response.data.msg) this.$q.notify({type:'negative',message:err.response.data.msg})
+          else this.$q.notify(err)
+        }
       }
     }
   },
@@ -60,7 +67,6 @@ export default defineComponent({
       },
       password:{
         required,
-        minLength:minLength(5),
         $autoDirty:true
       },
     }
