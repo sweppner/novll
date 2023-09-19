@@ -7,27 +7,16 @@ let context = ""
 const role_content = "You are an expert AI author who has the ability to write with the style" +
                         "and skill of any known or unknown author.";
 
-const messages = [
-    { role: 'system', content: 'You are an expert AI author who has the ability to mimic the style and skill of any ' +
-            'known or unknown author.' },
-];
-
-// async function generateContent(prompt) {
-//     const maxTokens = 100;
-//     const response = await openai.completions.create({
-//         prompt,
-//         max_tokens: maxTokens,
-//         model: gpt_version
-//     });
-//     return response.choices[0].text.trim();
-// }
+// const messages = [
+//     { role: 'system', content: role_content },
+// ];
 
 async function createBook(bookInfo) {
 
     let messages = [
         { role: "system", content: role_content },
     ];
-        // const conceptValidation = await getGpt3Response('Validate the concept for the novel:'+bookInfo['concept'];
+
     let outlinePrompt = "Write a comprehensive outline for the book \""+bookInfo['title']+"\" based on" +
         " the following synopsis: ["+bookInfo["synopsis"]+"]. This should include a genre, a list of settings, a " +
         "list of characters with descriptions of each character, a chapter-by-chapter breakdown, an epilogue " +
@@ -147,6 +136,15 @@ module.exports = {
 };
 
 
+// async function generateContent(prompt) {
+//     const maxTokens = 100;
+//     const response = await openai.completions.create({
+//         prompt,
+//         max_tokens: maxTokens,
+//         model: gpt_version
+//     });
+//     return response.choices[0].text.trim();
+// }
 
 
 //
