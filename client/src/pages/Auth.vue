@@ -28,54 +28,56 @@ q-page
 </template>
 
 <script>
-import { defineComponent } from 'vue'
-import { useVuelidate } from '@vuelidate/core'
-import {
-  email,
-  required,
-  minLength
-} from '@vuelidate/validators'
+import { defineComponent } from "vue";
+import { useVuelidate } from "@vuelidate/core";
+import { email, required, minLength } from "@vuelidate/validators";
 
 export default defineComponent({
-  name: 'Auth',
-  data(){
-    return{
-      email:'',
-      password:'',
-    }
+  name: "Auth",
+  data() {
+    return {
+      email: "",
+      password: "",
+    };
   },
-  methods:{
-    async submit(){
-      let valid = await this.v$.$validate()
-      if(valid){
-        try{
-          let {data} = await this.$axios.post('/api/login',{email:this.email, password:this.password})
-          this.$q.notify({type:'positive',message:"Success"})
-        }catch(err){
-          if(err.response.data.msg) this.$q.notify({type:'negative',message:err.response.data.msg})
-          else this.$q.notify(err)
+  methods: {
+    async submit() {
+      let valid = await this.v$.$validate();
+      if (valid) {
+        try {
+          let { data } = await this.$axios.post("/api/login", {
+            email: this.email,
+            password: this.password,
+          });
+          this.$q.notify({ type: "positive", message: "Success" });
+        } catch (err) {
+          if (err.response.data.msg)
+            this.$q.notify({
+              type: "negative",
+              message: err.response.data.msg,
+            });
+          else this.$q.notify(err);
         }
       }
-    }
+    },
   },
-  validations(){
-    return{
-      email:{
+  validations() {
+    return {
+      email: {
         email,
         required,
-        $autoDirty:true
+        $autoDirty: true,
       },
-      password:{
+      password: {
         required,
-        $autoDirty:true
+        $autoDirty: true,
       },
-    }
+    };
   },
-  setup(){
-    return{
+  setup() {
+    return {
       v$: useVuelidate({}),
-    }
-  }
-
-})
+    };
+  },
+});
 </script>

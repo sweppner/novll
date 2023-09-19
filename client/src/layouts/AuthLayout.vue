@@ -8,21 +8,15 @@ q-layout( view="lHh Lpr lFf")
 </template>
 
 <script>
-import { defineComponent, } from 'vue'
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'MainLayout',
+  name: "MainLayout",
 
-  components: {
+  components: {},
 
+  setup() {
+    return {};
   },
-
-  setup () {
-
-
-    return {
-
-    }
-  }
-})
+});
 </script>

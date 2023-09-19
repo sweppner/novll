@@ -7,18 +7,18 @@ q-page( class="")
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'IndexPage',
-  data(){
-    return{
-      book:null,
-    }
+  name: "IndexPage",
+  data() {
+    return {
+      book: null,
+    };
   },
-  async mounted(){
-    let {data} = await this.$axios.get('/api/index')
-    this.book =data
-  }
-})
+  async mounted() {
+    let { data } = await this.$axios.get("/api/index");
+    this.book = data;
+  },
+});
 </script>

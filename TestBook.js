@@ -1,4 +1,8 @@
-{
+module.exports = {
+  book
+};
+
+let book = {
   "1": {
     "title": "Prologue: The Cyber Apocalypse",
     "description": [

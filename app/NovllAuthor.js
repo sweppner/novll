@@ -16,10 +16,6 @@ const uri = "mongodb+srv://admin:<password>@serverlessinstance0.e8wmahg.mongodb.
 const role_content = "You are an expert AI author who has the ability to write with the style" +
                         "and skill of any known or unknown author.";
 
-// { role: 'user', content: 'Who won the world series in 2020?' },
-// { role: 'assistant', content: 'The Los Angeles Dodgers won the World Series in 2020.' },
-// { role: 'user', content: 'Where was it played?' },
-
 const messages = [
     { role: 'system', content: 'You are an expert AI author who has the ability to mimic the style and skill of any known or unknown author.' },
 ];
@@ -82,16 +78,31 @@ async function getBookByID(field, value) {
     }
 }
 
-function extractJSONFromString(str) {
+async function extractJSONFromString(str) {
     const startIndex = str.indexOf('{');
     const endIndex = str.lastIndexOf('}') + 1;
 
+    let response = {
+        'success': false
+    }
+
     if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
-        return null; // Return null if there are no valid JSON strings
+        return response; // Return null if there are no valid JSON strings
     }
 
     console.log(str.substring(startIndex, endIndex))
-    return JSON.parse(str.substring(startIndex, endIndex));
+    try {
+        response['data'] = JSON.parse(str.substring(startIndex, endIndex));
+    } catch {
+        console.log("extractJSONFromString - issue parsing JSON from string")
+        let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
+            "only include the text representing a valid JSON object.";
+
+        let data = await getGpt3Response(outlineJSONFixPrompt)
+        response['data'] = JSON.parse(data);
+    }
+
+    return response;
 }
 
 const openai = new OpenAIApi({
@@ -139,14 +150,36 @@ async function createBook(bookInfo) {
         "\"chapters\": (JSON) a JSON object with a key for each chapter number, where the value is a JSON object with the following keys and values: " +
         "\"title\": (string) the title of the chapter," +
         "\"description\": (array) an array of strings that are the descriptive sentences of the chapter";
-    const outlineJSONString = await getGpt3Response(outlineJSONPrompt, true, messages);
+    let outlineJSONString = await getGpt3Response(outlineJSONPrompt, true, messages);
 
-    messages.push({
-        role:'user', content: outlineJSONPrompt,
-        role: 'assistant', content: outlineJSONString
-    });
 
-    const outlineJSON = extractJSONFromString(outlineJSONString)
+    let outlineJSON = extractJSONFromString(outlineJSONString)
+
+    while(!outlineJSON['success']){
+
+        outlineJSON = extractJSONFromString(outlineJSONString)
+    }
+
+    outlineJSON
+
+    if(outlineJSON['success']){
+        console.log('Returned valid json')
+        messages.push({
+            role:'user', content: outlineJSONPrompt,
+            role: 'assistant', content: outlineJSONString
+        });
+        outlineJSON = outlineJSON['data']
+    }else{
+        console.log('Returned invalid json')
+        if( !Object.hasOwnProperty('data')){
+            let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
+                "only include the text representing a valid JSON object.";
+            outlineJSON = await getGpt3Response(outlineJSONFixPrompt);
+        }else{
+            outlineJSONString = await getGpt3Response(outlineJSONPrompt, true, messages);
+
+        }
+    }
 
     let chapter_list = Object.keys(outlineJSON['chapters'])
     let book = {}
@@ -159,9 +192,6 @@ async function createBook(bookInfo) {
         let chapterPrompt = "Write chapter "+chapterString+" in its' entirety. The title of the chapter " +
             "is \""+chapterTitle+"\" and the description is: "+chapterDescription;
         const chapter = await getGpt3Response(chapterPrompt, true, messages);
-
-        // console.log('outline')
-        // console.log(outline)
 
         messages.push({
             role:'user', content: chapterPrompt,
@@ -177,6 +207,133 @@ async function createBook(bookInfo) {
 
     return book;
 }
+
+
+//Get book ideas from ChatGPT, by author, title, or both.
+
+//TODO: add option to provide multiple books or authors
+//TODO: need a way to validate books/authors
+//TODO: idea, something to suggest other books or authors by genre
+
+const includesDescription = "Each book idea including a title, a brief concept, a synopsis that is 5 " +
+    "sentences long, a genre, and a description of the cover art for the front of the book."
+const responseFormat = "Please provide the response formatted as a JSON object. For title use the key " +
+    "\"title\", for concept use the key \"concept\", for synopsis use the key \"synopsis\", for genre use the" +
+    " key \"genre\", and for the description of the cover art for the front of the book use the key \"cover_art\"."
+
+async function fetchBookIdeasByBook(book_title, num_ideas=5){
+    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books similar in writing style, genre," +
+        " and themes to the book " + book_title + ". " + includesDescription + " " + responseFormat;
+
+    // const idea = await getGpt3Response(prompt);
+    return await getGpt3Response(prompt);;
+}
+
+async function fetchBookIdeasByAuthor(author_name, num_ideas=5){
+    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books similar in writing style, genre," +
+        " and themes as books written by the author " + author_name + ". " + includesDescription + " " + responseFormat;
+
+    // const idea = await getGpt3Response(prompt);
+
+    return await getGpt3Response(prompt);;
+}
+
+async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=5){
+    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books similar in writing style, genre," +
+        " and themes to the book " + book_title + " by the author "+author_name+". " + includesDescription + " " + responseFormat;
+    console.log("Using openai api (GPT3) to generate [ " + num_ideas.toString() + " ] book ideas.")
+
+    const idea = await getGpt3Response(prompt);
+    console.log("Ideas fetched.")
+
+    // console.log(idea)
+    return idea;
+}
+
+async function fetchBookIdeasByGenreAndConcept(genre, concept, num_ideas=5){
+    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books of the "+genre+" genre " +
+        " inspired by the following idea [ " + concept + " ]. " + includesDescription + " " + responseFormat;
+
+    // const idea =
+    return await getGpt3Response(prompt);;
+}
+
+async function getGpt3Response(prompt, is_context=false, messages=[]){
+    console.log('Prompt: '+prompt.substring(0, 50)+'...');
+
+    if(is_context){
+        messages.push({
+            role: "user", content: prompt
+        })
+    }else{
+        messages = [    { role: "system", content: role_content },
+            { role: "user", content: prompt }]
+    }
+
+    console.log('messages')
+    console.log(messages)
+
+    try {
+        const chatCompletion = await openai.chat.completions.create({
+            model: gpt_version, // You may need to use the model identifier relevant to you
+            messages: messages
+        });
+
+        const completionText = chatCompletion.choices[0].message.content;
+
+        console.log('completionText')
+        console.log(completionText)
+
+        // This line is just for demonstration, you can remove it
+        // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
+
+        return completionText;
+    } catch (error) {
+        if (error.response) {
+            console.error(error.response.status);
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+        return null; // or return a default message
+    }
+};
+//
+// async function writeWithGPT3(messages) {
+//     try {
+//         const response = await axios.post(
+//             'https://api.openai.com/v1/chat/completions',
+//             {
+//                 model: 'gpt-3.5-turbo', // or 'davinci-codex' or any other available model
+//                 messages: messages,
+//             },
+//             {
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'OpenAI-API-Key': 'YOUR_OPENAI_API_KEY',
+//                 },
+//             }
+//         );
+//
+//         // console.log(response.data.choices[0].message.content.trim());
+//     } catch (error) {
+//         console.error(error);
+//     }
+// }
+
+module.exports = {
+    createBook,
+    fetchBookIdeasByBook,
+    fetchBookIdeasByAuthor,
+    fetchBookIdeasByBookAndAuthor,
+    fetchBookIdeasByGenreAndConcept,
+    getBookByID
+};
+
+
+
+
+
 
 // async function createBook(bookInfo) {
 //     const characterData = {};
@@ -381,154 +538,3 @@ async function createBook(bookInfo) {
 //
 //     return bookObject;
 // }
-
-//Get book ideas from ChatGPT, by author, title, or both.
-
-//TODO: add option to provide multiple books or authors
-//TODO: need a way to validate books/authors
-//TODO: idea, something to suggest other books or authors by genre
-
-const includesDescription = "Each book idea including a title, a brief concept, a synopsis that is 5 " +
-    "sentences long, a genre, and a description of the cover art for the front of the book."
-const responseFormat = "Please provide the response formatted as a JSON object. For title use the key " +
-    "\"title\", for concept use the key \"concept\", for synopsis use the key \"synopsis\", for genre use the" +
-    " key \"genre\", and for the description of the cover art for the front of the book use the key \"cover_art\"."
-
-async function fetchBookIdeasByBook(book_title, num_ideas=5){
-    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books similar in writing style, genre," +
-        " and themes to the book " + book_title + ". " + includesDescription + " " + responseFormat;
-
-    // const idea = await getGpt3Response(prompt);
-    return await getGpt3Response(prompt);;
-}
-
-async function fetchBookIdeasByAuthor(author_name, num_ideas=5){
-    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books similar in writing style, genre," +
-        " and themes as books written by the author " + author_name + ". " + includesDescription + " " + responseFormat;
-
-    // const idea = await getGpt3Response(prompt);
-
-    return await getGpt3Response(prompt);;
-}
-
-async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=5){
-    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books similar in writing style, genre," +
-        " and themes to the book " + book_title + " by the author "+author_name+". " + includesDescription + " " + responseFormat;
-    console.log("Using openai api (GPT3) to generate [ " + num_ideas.toString() + " ] book ideas.")
-
-    const idea = await getGpt3Response(prompt);
-    console.log("Ideas fetched.")
-
-    // console.log(idea)
-    return idea;
-}
-
-async function fetchBookIdeasByGenreAndConcept(genre, concept, num_ideas=5){
-    const prompt = "Provide me with ideas for " + num_ideas.toString() + " books of the "+genre+" genre " +
-        " inspired by the following idea [ " + concept + " ]. " + includesDescription + " " + responseFormat;
-
-    // const idea =
-    return await getGpt3Response(prompt);;
-}
-
-async function createSummaryContext(new_context){
-    try {
-        const messages = [
-            { role: "Context Summarizer", content: "you " },
-            { role: "user", content: prompt }
-        ];
-
-        const chatCompletion = await openai.chat.completions.create({
-            model: gpt_version, // You may need to use the model identifier relevant to you
-            messages: messages
-        });
-
-        const completionText = chatCompletion.choices[0].message.content;
-
-        // This line is just for demonstration, you can remove it
-        // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
-
-        return completionText;
-    } catch (error) {
-        if (error.response) {
-            console.error(error.response.status);
-            console.error(error.response.data);
-        } else {
-            console.error(error.message);
-        }
-        return null; // or return a default message
-    }
-}
-
-
-async function getGpt3Response(prompt, is_context=false, messages=[]){
-    console.log('Prompt: '+prompt.substring(0, 50)+'...');
-
-    if(is_context){
-        messages.push({
-            role: "user", content: prompt
-        })
-    }else{
-        messages = [    { role: "system", content: role_content },
-            { role: "user", content: prompt }]
-    }
-
-    console.log('messages')
-    console.log(messages)
-
-    try {
-        const chatCompletion = await openai.chat.completions.create({
-            model: gpt_version, // You may need to use the model identifier relevant to you
-            messages: messages
-        });
-
-        const completionText = chatCompletion.choices[0].message.content;
-
-        console.log('completionText')
-        console.log(completionText)
-
-        // This line is just for demonstration, you can remove it
-        // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
-
-        return completionText;
-    } catch (error) {
-        if (error.response) {
-            console.error(error.response.status);
-            console.error(error.response.data);
-        } else {
-            console.error(error.message);
-        }
-        return null; // or return a default message
-    }
-};
-//
-// async function writeWithGPT3(messages) {
-//     try {
-//         const response = await axios.post(
-//             'https://api.openai.com/v1/chat/completions',
-//             {
-//                 model: 'gpt-3.5-turbo', // or 'davinci-codex' or any other available model
-//                 messages: messages,
-//             },
-//             {
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                     'OpenAI-API-Key': 'YOUR_OPENAI_API_KEY',
-//                 },
-//             }
-//         );
-//
-//         // console.log(response.data.choices[0].message.content.trim());
-//     } catch (error) {
-//         console.error(error);
-//     }
-// }
-
-module.exports = {
-    createBook,
-    fetchBookIdeasByBook,
-    fetchBookIdeasByAuthor,
-    fetchBookIdeasByBookAndAuthor,
-    fetchBookIdeasByGenreAndConcept,
-    getBookByID
-};
