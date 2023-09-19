@@ -2,11 +2,21 @@ const {MongoClient, ServerApiVersion} = require("mongodb");
 const uuid = require("uuid");
 const mongodb_db_name = "NovelDB"
 const mongodb_collection = "novels"
+const OpenAIApi = require("openai");
+require('dotenv').config();
 
 const gpt_version = 'gpt-3.5-turbo-16k'
 
+const role_content = "You are an expert AI author who has the ability to write with the style" +
+    "and skill of any known or unknown author.";
 
-const uri = "mongodb+srv://admin:<password>@serverlessinstance0.e8wmahg.mongodb.net/?retryWrites=true&w=majority";
+const uri = 'mongodb+srv://admin:<password>@serverlessinstance0.e8wmahg.mongodb.net/?retryWrites=true&w=majority';
+
+
+const openai = new OpenAIApi({
+    apiKey: process.env.OPENAI_API_KEY // This is also the default, can be omitted
+});
+
 
 // const role_context_summary = "you are "
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -29,7 +39,7 @@ const client = new MongoClient(uri, {
 
 
 async function getGptResponse(prompt, is_context=false, messages=[]){
-    console.log('Prompt: '+prompt.substring(0, 50)+'...');
+    console.log('Prompt: '+prompt.substring(0, 75)+'...');
 
     if(is_context){
         messages.push({
@@ -56,7 +66,8 @@ async function getGptResponse(prompt, is_context=false, messages=[]){
 
         // This line is just for demonstration, you can remove it
         // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
-
+        console.log('completionText')
+        console.log(completionText)
         return completionText;
     } catch (error) {
         if (error.response) {
@@ -138,7 +149,7 @@ async function extractJSONFromString(str) {
         let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
             "only include the text representing a valid JSON object."+str.substring(startIndex, endIndex);
 
-        let data = await getGpt3Response(outlineJSONFixPrompt)
+        let data = await getGptResponse(outlineJSONFixPrompt)
 
         response['data'] = JSON.parse(data);
     }

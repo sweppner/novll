@@ -1,4 +1,5 @@
 const Author = require('./Author');
+const NovllUtil = require('./NovllUtil')
 const fs = require('fs');
 const express = require('express');
 const app = express();
@@ -17,7 +18,9 @@ app.use(express.json());
 // Grab all the models
 fs.readdirSync(__dirname + '/models').forEach(function(filename){
     if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
-});
+})
+
+const db = "mongodb+srv://mongoose:xCnuM2AVG4RxYZyA@serverlessinstance0.e8wmahg.mongodb.net/NovelDB?retryWrites=true&w=majority";
 
 app.use(
     session({
@@ -50,6 +53,10 @@ app.post('/api/register', (req, res, next)=>{res.send('hi')})
 app.get('/ideas/author_title', async (req, res) => {
     const authorName = req.query.author_name;
     const bookTitle = req.query.book_title;
+
+    console.log('req.query')
+    console.log(req.query)
+
     res.setHeader('Content-Type', 'application/json');
     console.log("Requesting ideas based on author [ " + authorName + " ] and book title [ " + bookTitle + " ].")
     if (!authorName || !bookTitle) {
@@ -90,7 +97,7 @@ app.post('/build/book', async (req, res) => {
         let response = `Your JSON object has been processed.`;
         try {
             // Wait for the asynchronous function to complete
-            const book = await NovllAuthor.createBook(jsonInput);
+            const book = await Author.createBook(jsonInput);
             response = JSON.stringify(book)
 
             // Send the response back to the client
@@ -117,7 +124,7 @@ app.get('/book/get/id', async (req, res) => {
 
     try {
         // Wait for the asynchronous function to complete
-        const bookObject = await NovllAuthor.getBookByID(book_id)
+        const bookObject = await NovllUtil.getBookByID(book_id)
 
         // Send the response back to the client
         res.status(200).send(bookObject);
@@ -180,26 +187,26 @@ app.listen(port, () => {
 // });
 
 //get book ideas by genre and concept
-app.get('/ideas/genre_concept', async (req, res) => {
-    const book_genre = req.query['genre'];
-    const book_concept = req.query['concept'];
-
-    if (!book_genre || !book_concept) {
-        res.status(400).send('Please provide a book name');
-        return;
-    }
-
-    try {
-        // Wait for the asynchronous function to complete
-        const bookIdeas = await Author.fetchBookIdeasByGenreAndConcept(book_genre, book_concept)
-        console.log(bookIdeas)
-        // Send the response back to the client
-        res.status(200).send(bookIdeas);
-    } catch (error) {
-        console.error('An error occurred:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
+// app.get('/ideas/genre_concept', async (req, res) => {
+//     const book_genre = req.query['genre'];
+//     const book_concept = req.query['concept'];
+//
+//     if (!book_genre || !book_concept) {
+//         res.status(400).send('Please provide a book name');
+//         return;
+//     }
+//
+//     try {
+//         // Wait for the asynchronous function to complete
+//         const bookIdeas = await Author.fetchBookIdeasByGenreAndConcept(book_genre, book_concept)
+//         console.log(bookIdeas)
+//         // Send the response back to the client
+//         res.status(200).send(bookIdeas);
+//     } catch (error) {
+//         console.error('An error occurred:', error);
+//         res.status(500).send('Internal Server Error');
+//     }
+// });
 
 
 

@@ -1,6 +1,4 @@
-const Util = require('Util.js')
-
-require('dotenv').config();
+const NovllUtil = require('NovllUtil.js')
 
 const role_content = "You are an expert AI author who has the ability to write with the style" +
     "and skill of any known or unknown author.";
@@ -19,7 +17,7 @@ async function editBook(book) {
         " the following synopsis: ["+bookInfo["synopsis"]+"]. This should include a genre, a list of settings, a " +
         "list of characters with descriptions of each character, a chapter-by-chapter breakdown, an epilogue " +
         "description, and a list of appendices."
-    const outline = await Util.getGptResponse(outlinePrompt, true, messages);
+    const outline = await NovllUtil.getGptResponse(outlinePrompt, true, messages);
 
     // console.log('outline')
     // console.log(outline)
@@ -39,14 +37,14 @@ async function editBook(book) {
         "\"chapters\": (JSON) a JSON object with a key for each chapter number, where the value is a JSON object with the following keys and values: " +
         "\"title\": (string) the title of the chapter," +
         "\"description\": (array) an array of strings that are the descriptive sentences of the chapter";
-    const outlineJSONString = await Util.getGptResponse(outlineJSONPrompt, true, messages);
+    const outlineJSONString = await NovllUtil.getGptResponse(outlineJSONPrompt, true, messages);
 
     messages.push({
         role:'user', content: outlineJSONPrompt,
         role: 'assistant', content: outlineJSONString
     });
 
-    const outlineJSON = Util.extractJSONFromString(outlineJSONString)
+    const outlineJSON = NovllUtil.extractJSONFromString(outlineJSONString)
 
     let chapter_list = Object.keys(outlineJSON['chapters'])
     // let book = {}

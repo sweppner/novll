@@ -1,11 +1,10 @@
-const uuid = require('uuid');
-const Util = require(Util.js)
+const NovllUtil = require('./NovllUtil')
 
-require('dotenv').config();
 let context = ""
 
 const role_content = "You are an expert AI author who has the ability to write with the style" +
-                        "and skill of any known or unknown author.";
+    "and skill of any known or unknown author.";
+
 
 // const messages = [
 //     { role: 'system', content: role_content },
@@ -21,7 +20,7 @@ async function createBook(bookInfo) {
         " the following synopsis: ["+bookInfo["synopsis"]+"]. This should include a genre, a list of settings, a " +
         "list of characters with descriptions of each character, a chapter-by-chapter breakdown, an epilogue " +
         "description, and a list of appendices."
-    const outline = await getGpt3Response(outlinePrompt, true, messages);
+    const outline = await NovllUtil.getGptResponse(outlinePrompt, true, messages);
 
     messages.push({
         role:'user', content: outlinePrompt,
@@ -36,65 +35,61 @@ async function createBook(bookInfo) {
         "\"epilogue\": (string) a detailed description of the epilogue," +
         "\"appendices\": (array) an array of strings with a description of each member of the appendix," +
         "\"chapters\": (JSON) a JSON object with a key for each chapter number, where the value is a JSON object with the following keys and values: " +
-        "\"title\": (string) the title of the chapter," +
-        "\"description\": (array) an array of strings that are the descriptive sentences of the chapter";
-    let outlineJSONString = await Util.getGptResponse(outlineJSONPrompt, true, messages);
+        "   \"title\": (string) the title of the chapter," +
+        "   \"description\": (array) an array of strings that are the descriptive sentences of the chapter";
+    let outlineJSONString = await NovllUtil.getGptResponse(outlineJSONPrompt, true, messages);
 
+    let outlineJSON = await NovllUtil.extractJSONFromString(outlineJSONString)
 
-    let outlineJSON = await Util.extractJSONFromString(outlineJSONString)
+    console.log('outlineJSON')
+    console.log(outlineJSON)
 
-    outlineJSON.then(async function(result) {
+    if(outlineJSON['success']){
+        console.log('Returned valid json')
+        messages.push({
+            role:'user', content: outlineJSONPrompt,
+            role: 'assistant', content: outlineJSONString
+        });
+        outlineJSON = outlineJSON['data']
+    }else{
+        console.log('Returned invalid json')
 
-        if(result['success']){
-            console.log('Returned valid json')
-            messages.push({
-                role:'user', content: outlineJSONPrompt,
-                role: 'assistant', content: outlineJSONString
-            });
-            outlineJSON = result['data']
+        if( outlineJSON.hasOwnProperty('data')){
+            let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
+                "only include the text representing a valid JSON object." + JSON.stringify(outlineJSON['data']);
+            outlineJSON = await NovllUtil.getGptResponse(outlineJSONFixPrompt);
+            outlineJSON = await NovllUtil.extractJSONFromString(outlineJSON);
+            console.log(outlineJSON)
         }else{
-            console.log('Returned invalid json')
-
-            if( outlineJSON.hasOwnProperty('data')){
-                let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
-                    "only include the text representing a valid JSON object." + JSON.stringify(outlineJSON['data']);
-                outlineJSON = await Util.getGptResponse(outlineJSONFixPrompt);
-                outlineJSON = await Util.extractJSONFromString(outlineJSON);
-                console.log(outlineJSON)
-            }else{
-                console.log('Needs work')
-            }
+            console.log('Needs work')
         }
+    }
 
-        let chapter_list = Object.keys(outlineJSON['chapters']);
-        let book = {}
-        for(let chapter_index = 1; chapter_index < chapter_list.length; chapter_index ++){
-            let chapterString = chapter_index.toString()
-            let chapterObject = outlineJSON['chapters'][chapterString]
-            let chapterTitle = chapterObject['title']
-            let chapterDescription = chapterObject['description']
+    let chapter_list = Object.keys(outlineJSON['chapters']);
+    let book = {}
+    for(let chapter_index = 1; chapter_index < chapter_list.length; chapter_index ++){
+        let chapterString = chapter_index.toString()
+        let chapterObject = outlineJSON['chapters'][chapterString]
+        let chapterTitle = chapterObject['title']
+        let chapterDescription = chapterObject['description']
 
-            let chapterPrompt = "Write chapter "+chapterString+" in its' entirety. The title of the chapter " +
-                "is \""+chapterTitle+"\" and the description is: "+chapterDescription;
-            const chapter = await Util.getGptResponse(chapterPrompt, true, messages);
+        let chapterPrompt = "Write chapter "+chapterString+" in its' entirety. The title of the chapter " +
+            "is \""+chapterTitle+"\" and the description is: "+chapterDescription;
+        const chapter = await NovllUtil.getGptResponse(chapterPrompt, true, messages);
 
-            messages.push({
-                role:'user', content: chapterPrompt,
-                role: 'assistant', content: chapter
-            });
+        messages.push({
+            role:'user', content: chapterPrompt,
+            role: 'assistant', content: chapter
+        });
 
-            book[chapterString] = {
-                "title": chapterTitle,
-                "description": chapterDescription,
-                "text": chapter
-            }
+        book[chapterString] = {
+            "title": chapterTitle,
+            "description": chapterDescription,
+            "text": chapter
         }
+    }
 
-        return book;
-    }, function(err) {
-        console.log(err); // Error: "It broke"
-    });
-
+    return book;
 }
 
 async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=5){
@@ -114,8 +109,9 @@ async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=
 
     console.log("Using openai api (GPT3) to generate [ " + num_ideas.toString() + " ] book ideas.")
 
-    const idea = await getGpt3Response(prompt);
+    const idea = await NovllUtil.getGptResponse(prompt);
     console.log("Ideas fetched.")
+    console.log(idea)
 
     // console.log(idea)
     return idea;
@@ -134,6 +130,60 @@ module.exports = {
     createBook,
     fetchBookIdeasByBookAndAuthor
 };
+
+//
+// outlineJSON.then(async function(result) {
+//
+//     if(result['success']){
+//         console.log('Returned valid json')
+//         messages.push({
+//             role:'user', content: outlineJSONPrompt,
+//             role: 'assistant', content: outlineJSONString
+//         });
+//         outlineJSON = result['data']
+//     }else{
+//         console.log('Returned invalid json')
+//
+//         if( outlineJSON.hasOwnProperty('data')){
+//             let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
+//                 "only include the text representing a valid JSON object." + JSON.stringify(outlineJSON['data']);
+//             outlineJSON = await NovllUtil.getGptResponse(outlineJSONFixPrompt);
+//             outlineJSON = await NovllUtil.extractJSONFromString(outlineJSON);
+//             console.log(outlineJSON)
+//         }else{
+//             console.log('Needs work')
+//         }
+//     }
+//
+//     let chapter_list = Object.keys(outlineJSON['chapters']);
+//     let book = {}
+//     for(let chapter_index = 1; chapter_index < chapter_list.length; chapter_index ++){
+//         let chapterString = chapter_index.toString()
+//         let chapterObject = outlineJSON['chapters'][chapterString]
+//         let chapterTitle = chapterObject['title']
+//         let chapterDescription = chapterObject['description']
+//
+//         let chapterPrompt = "Write chapter "+chapterString+" in its' entirety. The title of the chapter " +
+//             "is \""+chapterTitle+"\" and the description is: "+chapterDescription;
+//         const chapter = await NovllUtil.getGptResponse(chapterPrompt, true, messages);
+//
+//         messages.push({
+//             role:'user', content: chapterPrompt,
+//             role: 'assistant', content: chapter
+//         });
+//
+//         book[chapterString] = {
+//             "title": chapterTitle,
+//             "description": chapterDescription,
+//             "text": chapter
+//         }
+//     }
+//
+//     return book;
+// }, function(err) {
+//     console.log(err); // Error: "It broke"
+// });
+
 
 
 // async function generateContent(prompt) {

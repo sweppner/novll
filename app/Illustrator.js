@@ -1,7 +1,4 @@
-const Util = require('Util')
-const OpenAIApi = require("openai");
-const fs = require('fs').promises;
-const uuid = require('uuid');
+const NovllUtil = require('NovllUtil.js')
 const {book} = require("../TestBook");
 
 require('dotenv').config();
@@ -20,7 +17,7 @@ async function getImageFromText(bookText) {
 
     const prompt = 'Summarize this text in a single sentence to identify the most interesting and ' +
         'best moment to articulate in an illustration: ['+bookText+']'
-    let summaryText = getGpt3Response(prompt)
+    let summaryText = NovllUtil.getGptResponse(prompt)
 
 
     const response = await openai.createImage({
