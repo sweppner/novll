@@ -2,6 +2,10 @@
     box-sizing: border-box;
 }
 
+input{
+    width: 100%;
+
+}
 /* Create two equal columns that floats next to each other */
 .column {
     float: left;

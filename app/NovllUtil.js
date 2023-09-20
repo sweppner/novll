@@ -161,5 +161,6 @@ module.exports = {
     writeToMongo,
     getBookByID,
     getGptResponse,
-    extractJSONFromString
+    extractJSONFromString,
+    gpt_version
 };

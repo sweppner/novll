@@ -1,4 +1,5 @@
 const Author = require('./Author');
+const Publisher = require('./Publisher');
 const NovllUtil = require('./NovllUtil')
 const fs = require('fs');
 const express = require('express');
@@ -50,44 +51,52 @@ app.post('/api/register', (req, res, next)=>{res.send('hi')})
 
 
 //get book ideas by book author and title
-app.get('/ideas/author_title', async (req, res) => {
-    const authorName = req.query.author_name;
-    const bookTitle = req.query.book_title;
+app.get('/book/ideas', async (req, res) => {
+    let bookAuthor = '';
+    let bookTitle = '';
+    let bookGenre = '';
+    let bookConcept = '';
+    let bookNumChapters = 10;
 
     console.log('req.query')
     console.log(req.query)
 
-    res.setHeader('Content-Type', 'application/json');
-    console.log("Requesting ideas based on author [ " + authorName + " ] and book title [ " + bookTitle + " ].")
-    if (!authorName || !bookTitle) {
-        res.status(400).send('Please provide a book name or author');
-        return;
+    if(req.query.hasOwnProperty('book_author')){
+        bookAuthor = req.query['book_author']
     }
 
-    try {
-        // Wait for the asynchronous function to complete
-        console.log("Fetching book ideas.")
-        const bookIdeas = await Author.fetchBookIdeasByBookAndAuthor(authorName, bookTitle);
-        // console.log(bookIdeas)
-        console.log("Obtained ideas.")
+    if(req.query.hasOwnProperty('book_title')){
+        bookTitle = req.query['book_title']
+    }
 
-        const obj = {}
-        try {
-            const obj = JSON.parse(bookIdeas);  // Malformed JSON
-            // Send the response back to the client
-            res.status(200).send(JSON.stringify(obj));
-        } catch (error) {
-            console.error(error);
-        }
+    if(req.query.hasOwnProperty('book_genre')){
+        bookGenre = req.query['book_genre']
+    }
 
-    } catch (error) {
+    if(req.query.hasOwnProperty('book_concept')){
+        bookConcept = req.query['book_author']
+    }
+
+    if(req.query.hasOwnProperty('num_chapters_query')){
+        bookNumChapters = req.query['num_chapters_query']
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    console.log("Requesting ideas based on Author [ " + bookAuthor + " ], title [ " + bookTitle + " ], " +
+        "genre ["+bookGenre+'], and/or concept ['+bookConcept+'].')
+
+    try{
+        const bookIdeas = await Publisher.getBookIdeas(bookAuthor, bookTitle, bookGenre, bookConcept, bookNumChapters);
+        res.status(200).send(JSON.stringify(bookIdeas));
+    }catch(error){
         console.error('An error occurred:', error);
         res.status(500).send('Internal Server Error');
     }
+
 });
 
 //build book by selected concept
-app.post('/build/book', async (req, res) => {
+app.post('/book/build', async (req, res) => {
     const jsonInput = req.body; // Get JSON payload
     // console.log(req.body);
     // res.setHeader('Content-Type', 'application/json');

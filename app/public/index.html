@@ -14,13 +14,16 @@
           <form>
               <!-- fieldsets -->
               <fieldset>
-                  <legend>Tell us about your favorite book!</legend>
+                  <legend>Tell us about your favorite books!</legend>
                   <h3 class="fs-subtitle">We'll use this to come up with some ideas for books you might like</h3>
-                  <h4 class="fs-subtitle">Give us the name of a book that you love and the author that wrote it, and we'll do the rest! </h4>
-                  <input id="author_name" type="text" name="author_name" placeholder="Author's Full Name" />
-                  <input id="book_title" type="text" name="book_title" placeholder="Book's Title" />
+                  <h4 class="fs-subtitle">Give us some ideas/preferences (or none at all), and we'll do the rest! </h4>
+                  <input id="book_author" type="text" name="book_author" placeholder="Author's Full Name" /><br />
+                  <input id="book_title" type="text" name="book_title" placeholder="Book's Title" /><br />
+                  <input id="book_genre" type="text" name="book_genre" placeholder="Preferred Genre" /><br />
+                  <input id="book_concept" type="text" name="book_concept" placeholder="Have a concept you like?" /><br />
+                  <input id="num_chapters" type="number" name="num_chapters" placeholder="How long do you want your book to be?" /><br />
                   <!--          <input type="password" name="cpass" placeholder="Confirm Password" />-->
-                  <input id="favorite_book_author_submit" type="button" name="next" value="Next" />
+                  <input id="book_idea_preferences_submit" type="button" name="next" value="Next" />
               </fieldset>
               <fieldset>
                   <legend>Concept Selection</legend>

@@ -1,3 +1,5 @@
+
+
 const NovllUtil = require('./NovllUtil')
 
 let context = ""
@@ -5,6 +7,21 @@ let context = ""
 const role_content = "You are an expert AI author who has the ability to write with the style" +
     "and skill of any known or unknown author.";
 
+const age_setting = 'Adults'
+
+async function getBookIdeas(author_name, book_title, genre, concept, num_chapters) {
+    const bookIdeasPrompt = buildBookIdeaQuery(author_name, book_title, genre, concept, num_chapters)
+
+    try{
+        console.log("Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.")
+        const bookIdeas = await NovllUtil.getGptResponse(bookIdeasPrompt);
+        console.log("["+num_ideas.toString()+"] ideas fetched.")
+        return await NovllUtil.extractJSONFromString(bookIdeas);
+    }catch(error){
+        console.log(error); // Error: "It broke"
+        return await getBookIdeas(author_name, book_title, genre, concept, num_ideas);
+    }
+}
 
 // const messages = [
 //     { role: 'system', content: role_content },
@@ -92,6 +109,47 @@ async function createBook(bookInfo) {
     return book;
 }
 
+
+function buildBookIdeaQuery(author_name, book_title, genre, concept, num_chapters) {
+    const includesDescription = "Each book idea including a title, a brief concept, a synopsis that is 5 " +
+        "sentences long, a genre, a hyper specific artistic style (example of a similar artist, medium, and color scheme) " +
+        "for book illustrations, and a description of the cover art for the front of the book."
+
+    const responseFormat = "Please provide the response formatted as a JSON object. For title use the key " +
+        "\"title\", for concept use the key \"concept\", for synopsis use the key \"synopsis\", for genre use the" +
+        " key \"genre\", for artistic style use the key \"style\", and for the description of the cover art for the " +
+        "front of the book use the key \"cover_art\"."
+
+    let prompt = "Provide me with ideas for " + 5 + " books that fulfill the " +
+        "following requirements:";
+    // "similar in writing style, " +
+    //     "genre, and themes to the book " + book_title + " by the author "+author_name+". " + includesDescription +
+    //     " " + responseFormat;
+    if (author_name != '') {
+        prompt = prompt + 'match the style of the author ' + author_name + ', ';
+    }
+
+    if (book_title != '') {
+        prompt = prompt + 'match the style of the book ' + book_title + ', '
+    }
+
+    if (genre != '') {
+        prompt = prompt + 'are written in the genre ' + genre + ', '
+    }
+
+    if (concept != '') {
+        prompt = prompt + 'are inspired by the following concept [' + genre + '] '
+    }
+
+    if((author_name == '')&&(book_title == '')&&(genre == '')&&(concept == '')){
+        prompt = prompt + "any creative ideas that you may have as long as they they are appropriate for "
+            + age_setting+'.'
+    }
+
+    return prompt + '.' + includesDescription + " " + responseFormat;
+}
+
+
 async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=5){
 
     const includesDescription = "Each book idea including a title, a brief concept, a synopsis that is 5 " +
@@ -128,7 +186,8 @@ async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=
 
 module.exports = {
     createBook,
-    fetchBookIdeasByBookAndAuthor
+    fetchBookIdeasByBookAndAuthor,
+    getBookIdeas
 };
 
 //
