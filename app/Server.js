@@ -1,6 +1,6 @@
-const Author = require('./Author');
 const Publisher = require('./Publisher');
-const NovllUtil = require('./NovllUtil')
+// const NovllUtil = require('./NovllUtil')
+// const Author = require('./Author');
 const fs = require('fs');
 const express = require('express');
 const app = express();
@@ -52,41 +52,10 @@ app.post('/api/register', (req, res, next)=>{res.send('hi')})
 
 //get book ideas by book author and title
 app.get('/book/ideas', async (req, res) => {
-    let bookAuthor = '';
-    let bookTitle = '';
-    let bookGenre = '';
-    let bookConcept = '';
-    let bookNumChapters = 10;
-
-    console.log('req.query')
-    console.log(req.query)
-
-    if(req.query.hasOwnProperty('book_author')){
-        bookAuthor = req.query['book_author']
-    }
-
-    if(req.query.hasOwnProperty('book_title')){
-        bookTitle = req.query['book_title']
-    }
-
-    if(req.query.hasOwnProperty('book_genre')){
-        bookGenre = req.query['book_genre']
-    }
-
-    if(req.query.hasOwnProperty('book_concept')){
-        bookConcept = req.query['book_author']
-    }
-
-    if(req.query.hasOwnProperty('num_chapters_query')){
-        bookNumChapters = req.query['num_chapters_query']
-    }
-
     res.setHeader('Content-Type', 'application/json');
-    console.log("Requesting ideas based on Author [ " + bookAuthor + " ], title [ " + bookTitle + " ], " +
-        "genre ["+bookGenre+'], and/or concept ['+bookConcept+'].')
 
     try{
-        const bookIdeas = await Publisher.getBookIdeas(bookAuthor, bookTitle, bookGenre, bookConcept, bookNumChapters);
+        const bookIdeas = await Publisher.getBookIdeas(req.query);
         res.status(200).send(JSON.stringify(bookIdeas));
     }catch(error){
         console.error('An error occurred:', error);
@@ -103,11 +72,10 @@ app.post('/book/build', async (req, res) => {
 
     if (jsonInput && jsonInput.title && jsonInput.genre && jsonInput.num_chapters && jsonInput.synopsis) {
         // Construct and return a string response
-        let response = `Your JSON object has been processed.`;
+        let response = {'message':'Your JSON object has been processed.'};
         try {
             // Wait for the asynchronous function to complete
-            const book = await Author.createBook(jsonInput);
-            response = JSON.stringify(book)
+            const book = await Publisher.buildBook(jsonInput);
 
             // Send the response back to the client
             res.status(200).send(book);
@@ -115,8 +83,10 @@ app.post('/book/build', async (req, res) => {
             console.error('An error occurred:', error);
             res.status(500).send('Internal Server Error');
         }
-
-        res.status(200).send(response);
+        response = JSON.stringify(response);
+        console.log('response')
+        console.log(response)
+        res.status(200).send();
     } else {
         res.status(400).send('Invalid JSON object. A "name" property is required.');
     }
@@ -124,6 +94,7 @@ app.post('/book/build', async (req, res) => {
 
 //get book ideas by genre and concept
 app.get('/book/get/id', async (req, res) => {
+
     const book_id = req.query.book_id;
 
     if (!book_id) {
@@ -133,7 +104,7 @@ app.get('/book/get/id', async (req, res) => {
 
     try {
         // Wait for the asynchronous function to complete
-        const bookObject = await NovllUtil.getBookByID(book_id)
+        const bookObject = await Publisher.getBook(book_id)
 
         // Send the response back to the client
         res.status(200).send(bookObject);

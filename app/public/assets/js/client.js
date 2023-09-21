@@ -3,8 +3,8 @@ let port = '3000';
 let full_base_url = base_url+':'+port;
 
 document.addEventListener("DOMContentLoaded", () => {
-    addEventListenerById("book_idea_preferences_submit", handlePreferences, "click");
-    addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
+    addEventListenerById("book_idea_preferences_submit", handleIdeasRequest, "click");
+    addEventListenerById("more_concepts_submit", handleIdeasRequest, "click");
     addEventListenerById("create_book_submit", handleCreateBook, "click");
 });
 
@@ -15,7 +15,7 @@ function addEventListenerById(id, handler, type) {
     }
 }
 
-function handlePreferences() {
+function handleIdeasRequest() {
     console.log('Favorite book and author submitted!')
     const book_author = document.getElementById("book_author").value;
     const book_title = document.getElementById("book_title").value;
@@ -26,11 +26,11 @@ function handlePreferences() {
     document.getElementById('book-ideas-list').innerHTML = '<h2>Loading...</h2>'
     fetchBookIdeas(book_author, book_title, book_genre, book_concept, num_chapters)
         .then(books => {
-            let booksHtml = generateHTMLList(books);
+            let booksHtml = generateHTMLList(books[1]);
 
             document.getElementById("book-ideas-list").innerHTML = booksHtml;
             addEventListenerById("create_book", handleCreateBook, "click");
-            addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
+            addEventListenerById("more_concepts_submit", handleIdeasRequest, "click");
 
             addRadioButtonListeners()
         })
@@ -49,30 +49,12 @@ function addRadioButtonListeners(){
         radioButton.addEventListener('change', () => {
             your_book_title.textContent = radioButton.getAttribute('title');
             your_book_genre.textContent = radioButton.getAttribute('genre');
-            your_book_chapters.textContent = document.getElementById("num_chapters").value;
+            // your_book_chapters.textContent = document.getElementById("num_chapters").value;
             your_book_synopsis.textContent = radioButton.getAttribute('synopsis');
         });
     });
 }
 
-function handleFiveMoreConceptsSubmit() {
-    console.log('User requested 5 more book ideas.');
-    document.getElementById('book-ideas-list').innerHTML = '<h2>Loading...</h2>'
-
-    const book_author = document.getElementById("book_author").value;
-    const book_title = document.getElementById("book_title").value;
-
-    fetchBooks(author_name, book_title)
-        .then(books => {
-            let booksHtml = generateHTMLList(books);
-            document.getElementById("book-ideas-list").innerHTML = booksHtml;
-
-            addEventListenerById("create_book", handleCreateBook, "click");
-            addEventListenerById("5_more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
-            addRadioButtonListeners()
-        })
-        .catch(error => console.error(`There was a problem with the fetch: ${error}`));
-}
 
 async function handleCreateBook() {
     console.log('Creating book!')
@@ -80,9 +62,11 @@ async function handleCreateBook() {
     const book_object = {
         "title": document.getElementById("your_book_title").innerHTML,
         "genre": document.getElementById("your_book_genre").innerHTML,
-        "num_chapters": document.getElementById("your_book_chapters").innerHTML,
+        "num_chapters": document.getElementById("num_chapters").value,
         "synopsis": document.getElementById("your_book_synopsis").innerHTML,
     }
+
+    console.log()
 
     await fetch(full_base_url + '/book/build', {
         // mode: 'no-cors',
@@ -105,6 +89,7 @@ async function fetchBookIdeas(book_author, book_title, book_genre, book_concept,
     return await fetch(query_url, {mode: 'no-cors', method: 'GET'})
         .then(response => {
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            console.log('response')
             console.log(response)
             return response.json();
         })
@@ -115,15 +100,16 @@ function buildQueryUrl(book_author, book_title, book_genre, book_concept, num_ch
     let response = full_base_url+'/book/ideas?'
     const author_query = `book_author=${book_author}`;
     const title_query = `book_title=${book_title}`;
-    const genre_query = `book_query=${book_genre}`;
+    const genre_query = `book_genre=${book_genre}`;
     const concept_query = `book_concept=${book_concept}`;
     const num_chapters_query = `num_chapters=${num_chapters}`;
     let queries = [author_query,title_query,genre_query,concept_query,num_chapters_query]
 
+
     for(let query_index in queries){
         let query = queries[query_index]
         if(query.charAt(query.length - 1) !="="){
-            response = response + query
+            response = response + query + '&'
         }
     }
     return response;
@@ -132,6 +118,9 @@ function buildQueryUrl(book_author, book_title, book_genre, book_concept, num_ch
 function generateHTMLList(books) {
     console.log('books')
     console.log(books)
+
+
+
     let html = '<form>';
     books.forEach(book => {
         const { title, genre, concept, synopsis } = book;
@@ -144,6 +133,32 @@ function generateHTMLList(books) {
             </label>`;
     });
     // html += '</form><input id="num_chapters" type="text" name="num-chapters" value="10" placeholder="How many chapters?" />';
-    html += '<input type="button" id="5_more_concepts_submit" name="next" value="Create Five More Book Ideas" />';
+    html += '<input type="button" id="more_concepts_submit" name="next" value="Create Five More Book Ideas" />';
     return html;
 }
+
+
+
+
+
+
+
+//
+// function handleFiveMoreConceptsSubmit() {
+//     console.log('User requested 5 more book ideas.');
+//     document.getElementById('book-ideas-list').innerHTML = '<h2>Loading...</h2>'
+//
+//     const book_author = document.getElementById("book_author").value;
+//     const book_title = document.getElementById("book_title").value;
+//
+//     fetchBookIdeas(book_author, book_title, book_genre, book_concept, num_chapters)
+//         .then(books => {
+//             let booksHtml = generateHTMLList(books);
+//             document.getElementById("book-ideas-list").innerHTML = booksHtml;
+//
+//             addEventListenerById("create_book", handleCreateBook, "click");
+//             addEventListenerById("more_concepts_submit", handleFiveMoreConceptsSubmit, "click");
+//             addRadioButtonListeners()
+//         })
+//         .catch(error => console.error(`There was a problem with the fetch: ${error}`));
+// }

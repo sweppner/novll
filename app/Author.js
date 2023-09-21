@@ -1,25 +1,58 @@
-
-
 const NovllUtil = require('./NovllUtil')
 
-let context = ""
+
+let context = "";
 
 const role_content = "You are an expert AI author who has the ability to write with the style" +
     "and skill of any known or unknown author.";
 
 const age_setting = 'Adults'
 
-async function getBookIdeas(author_name, book_title, genre, concept, num_chapters) {
-    const bookIdeasPrompt = buildBookIdeaQuery(author_name, book_title, genre, concept, num_chapters)
+async function getBookIdeas(bookConceptPreferences) {
+
+    let bookAuthor = '';
+    let bookTitle = '';
+    let bookGenre = '';
+    let bookConcept = '';
+    let bookNumChapters = 10;
+    let num_ideas = bookConceptPreferences['num_ideas']
+
+    console.log('bookConceptPreferences')
+    console.log(bookConceptPreferences)
+
+    if(bookConceptPreferences.hasOwnProperty('book_author')){
+        bookAuthor = bookConceptPreferences['book_author']
+    }
+
+    if(bookConceptPreferences.hasOwnProperty('book_title')){
+        bookTitle = bookConceptPreferences['book_title']
+    }
+
+    if(bookConceptPreferences.hasOwnProperty('book_genre')){
+        bookGenre = bookConceptPreferences['book_genre']
+    }
+
+    if(bookConceptPreferences.hasOwnProperty('book_concept')){
+        bookConcept = bookConceptPreferences['book_concept']
+    }
+
+    if(bookConceptPreferences.hasOwnProperty('num_chapters')){
+        bookNumChapters = bookConceptPreferences['num_chapters']
+    }
+
+    console.log("Requesting book ideas based on Author [ " + bookAuthor + " ], title [ " + bookTitle + " ], " +
+        "genre ["+bookGenre+'], and/or concept ['+bookConcept+'].');
+
+    const bookIdeasPrompt = buildBookIdeaQuery(bookAuthor, bookTitle, bookTitle, bookConcept, num_ideas);
 
     try{
-        console.log("Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.")
+        console.log("Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.");
         const bookIdeas = await NovllUtil.getGptResponse(bookIdeasPrompt);
         console.log("["+num_ideas.toString()+"] ideas fetched.")
-        return await NovllUtil.extractJSONFromString(bookIdeas);
+        return await NovllUtil.extractArrayFromString(bookIdeas);
     }catch(error){
         console.log(error); // Error: "It broke"
-        return await getBookIdeas(author_name, book_title, genre, concept, num_ideas);
+        return await getBookIdeas(bookConcept);
     }
 }
 
@@ -36,7 +69,8 @@ async function createBook(bookInfo) {
     let outlinePrompt = "Write a comprehensive outline for the book \""+bookInfo['title']+"\" based on" +
         " the following synopsis: ["+bookInfo["synopsis"]+"]. This should include a genre, a list of settings, a " +
         "list of characters with descriptions of each character, a chapter-by-chapter breakdown, an epilogue " +
-        "description, and a list of appendices."
+        "description, and a list of appendices. This book should be " + bookInfo['num_chapters'] + " chapters long."
+
     const outline = await NovllUtil.getGptResponse(outlinePrompt, true, messages);
 
     messages.push({
@@ -58,9 +92,6 @@ async function createBook(bookInfo) {
 
     let outlineJSON = await NovllUtil.extractJSONFromString(outlineJSONString)
 
-    console.log('outlineJSON')
-    console.log(outlineJSON)
-
     if(outlineJSON['success']){
         console.log('Returned valid json')
         messages.push({
@@ -76,7 +107,6 @@ async function createBook(bookInfo) {
                 "only include the text representing a valid JSON object." + JSON.stringify(outlineJSON['data']);
             outlineJSON = await NovllUtil.getGptResponse(outlineJSONFixPrompt);
             outlineJSON = await NovllUtil.extractJSONFromString(outlineJSON);
-            console.log(outlineJSON)
         }else{
             console.log('Needs work')
         }
@@ -84,14 +114,18 @@ async function createBook(bookInfo) {
 
     let chapter_list = Object.keys(outlineJSON['chapters']);
     let book = {}
-    for(let chapter_index = 1; chapter_index < chapter_list.length; chapter_index ++){
+    for(let chapter_index = 1; chapter_index < chapter_list.length+1; chapter_index ++){
         let chapterString = chapter_index.toString()
         let chapterObject = outlineJSON['chapters'][chapterString]
+        // console.log(chapterObject)
+
         let chapterTitle = chapterObject['title']
         let chapterDescription = chapterObject['description']
 
-        let chapterPrompt = "Write chapter "+chapterString+" in its' entirety. The title of the chapter " +
-            "is \""+chapterTitle+"\" and the description is: "+chapterDescription;
+        let chapterPrompt = "Write chapter "+chapterString+" in its' entirety, titled " +
+            "is \""+chapterTitle+"\", based on the description: "+chapterDescription+". The response " +
+            "should only include the text of the chapter. The chapter should be "
+            +bookInfo['chapter_length_lowerbound']+" to " + bookInfo['chapter_length_upperbound'] + " words in length.";
         const chapter = await NovllUtil.getGptResponse(chapterPrompt, true, messages);
 
         messages.push({
@@ -115,10 +149,11 @@ function buildBookIdeaQuery(author_name, book_title, genre, concept, num_chapter
         "sentences long, a genre, a hyper specific artistic style (example of a similar artist, medium, and color scheme) " +
         "for book illustrations, and a description of the cover art for the front of the book."
 
-    const responseFormat = "Please provide the response formatted as a JSON object. For title use the key " +
-        "\"title\", for concept use the key \"concept\", for synopsis use the key \"synopsis\", for genre use the" +
-        " key \"genre\", for artistic style use the key \"style\", and for the description of the cover art for the " +
-        "front of the book use the key \"cover_art\"."
+    const responseFormat = " Please provide the response formatted as an array of JSON objects, with an object" +
+        " for each book idea. For each object: for the title use the key \"title\", for concept use the key" +
+        " \"concept\", for synopsis use the key \"synopsis\", for genre use the key \"genre\", for artistic style " +
+        "use the key \"style\", and for the description of the cover art for the front of the book use the " +
+        "key \"cover_art\"."
 
     let prompt = "Provide me with ideas for " + 5 + " books that fulfill the " +
         "following requirements:";
@@ -167,12 +202,11 @@ async function fetchBookIdeasByBookAndAuthor(book_title, author_name, num_ideas=
 
     console.log("Using openai api (GPT3) to generate [ " + num_ideas.toString() + " ] book ideas.")
 
-    const idea = await NovllUtil.getGptResponse(prompt);
+    const ideas = await NovllUtil.getGptResponse(prompt);
     console.log("Ideas fetched.")
-    console.log(idea)
 
     // console.log(idea)
-    return idea;
+    return ideas;
 }
 
 

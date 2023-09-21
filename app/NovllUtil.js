@@ -50,9 +50,6 @@ async function getGptResponse(prompt, is_context=false, messages=[]){
             { role: "user", content: prompt }]
     }
 
-    // console.log('messages')
-    // console.log(messages)
-
     try {
         const chatCompletion = await openai.chat.completions.create({
             model: gpt_version, // You may need to use the model identifier relevant to you
@@ -61,13 +58,6 @@ async function getGptResponse(prompt, is_context=false, messages=[]){
 
         const completionText = chatCompletion.choices[0].message.content;
 
-        // console.log('completionText')
-        // console.log(completionText)
-
-        // This line is just for demonstration, you can remove it
-        // console.log(`Prompt: ${prompt}\nResponse: ${completionText}`);
-        console.log('completionText')
-        console.log(completionText)
         return completionText;
     } catch (error) {
         if (error.response) {
@@ -157,10 +147,43 @@ async function extractJSONFromString(str) {
     return response;
 }
 
+
+async function extractArrayFromString(str) {
+    const startIndex = str.indexOf('[');
+    const endIndex = str.lastIndexOf(']') + 1;
+
+    let response = {
+        'success': false
+    }
+
+    if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
+        return response; // Return null if there are no valid JSON strings
+    }
+
+    try {
+        let data =  JSON.parse('{array:'+str.substring(startIndex, endIndex)+'}');
+        response['data'] = data.array;
+        response['success'] = true;
+    } catch {
+        console.log("extractJSONFromString - issue parsing JSON from string")
+        let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
+            "only include the text representing a valid JSON object."+str.substring(startIndex, endIndex);
+
+        let data = await getGptResponse(outlineJSONFixPrompt);
+
+        response['data'] = JSON.parse(data);
+    }
+
+    return response;
+
+    // return processObjectString(startIndex, endIndex, str);
+}
+
 module.exports = {
     writeToMongo,
     getBookByID,
     getGptResponse,
     extractJSONFromString,
+    extractArrayFromString,
     gpt_version
 };
