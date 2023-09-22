@@ -92,6 +92,33 @@ app.post('/book/build', async (req, res) => {
     }
 });
 
+app.post('/book/kids/build', async (req, res) => {
+    const jsonInput = req.body; // Get JSON payload
+    // console.log(req.body);
+    // res.setHeader('Content-Type', 'application/json');
+
+    if (jsonInput && jsonInput.title && jsonInput.genre && jsonInput.num_chapters && jsonInput.synopsis) {
+        // Construct and return a string response
+        let response = {'message':'Your JSON object has been processed.'};
+        try {
+            // Wait for the asynchronous function to complete
+            const book = await Publisher.getChildrensBook(jsonInput);
+
+            // Send the response back to the client
+            res.status(200).send(book);
+        } catch (error) {
+            console.error('An error occurred:', error);
+            res.status(500).send('Internal Server Error');
+        }
+        response = JSON.stringify(response);
+        console.log('response')
+        console.log(response)
+        res.status(200).send();
+    } else {
+        res.status(400).send('Invalid JSON object. A "name" property is required.');
+    }
+});
+
 //get book ideas by genre and concept
 app.get('/book/get/id', async (req, res) => {
 

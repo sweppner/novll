@@ -41,7 +41,9 @@ async function getBookIdeas(bookConceptPreferences) {
     }
 
     console.log("Requesting book ideas based on Author [ " + bookAuthor + " ], title [ " + bookTitle + " ], " +
-        "genre ["+bookGenre+'], and/or concept ['+bookConcept+'].');
+        "genre ["+bookGenre+'], and concept ['+bookConcept+']. Make sure that these ideas are inspired by ' +
+        'but not measurably derivative of the original work. They cant reference any names, titles, or other' +
+        ' concepts used in any of the authors other works');
 
     const bookIdeasPrompt = buildBookIdeaQuery(bookAuthor, bookTitle, bookTitle, bookConcept, num_ideas);
 
@@ -69,7 +71,7 @@ async function createBook(bookInfo) {
     let outlinePrompt = "Write a comprehensive outline for the book \""+bookInfo['title']+"\" based on" +
         " the following synopsis: ["+bookInfo["synopsis"]+"]. This should include a genre, a list of settings, a " +
         "list of characters with descriptions of each character, a chapter-by-chapter breakdown, an epilogue " +
-        "description, and a list of appendices. This book should be " + bookInfo['num_chapters'] + " chapters long."
+        "description, and a list of appendices. This book should be exactly " + bookInfo['num_chapters'] + " chapters long."
 
     const outline = await NovllUtil.getGptResponse(outlinePrompt, true, messages);
 
@@ -99,6 +101,10 @@ async function createBook(bookInfo) {
             role: 'assistant', content: outlineJSONString
         });
         outlineJSON = outlineJSON['data']
+
+        if(Object.keys(outlineJSON['chapters']).length != bookInfo['num_chapters']){
+            return createBook(bookInfo);
+        }
     }else{
         console.log('Returned invalid json')
 
@@ -114,6 +120,7 @@ async function createBook(bookInfo) {
 
     let chapter_list = Object.keys(outlineJSON['chapters']);
     let book = {}
+
     for(let chapter_index = 1; chapter_index < chapter_list.length+1; chapter_index ++){
         let chapterString = chapter_index.toString()
         let chapterObject = outlineJSON['chapters'][chapterString]
@@ -125,7 +132,8 @@ async function createBook(bookInfo) {
         let chapterPrompt = "Write chapter "+chapterString+" in its' entirety, titled " +
             "is \""+chapterTitle+"\", based on the description: "+chapterDescription+". The response " +
             "should only include the text of the chapter. The chapter should be "
-            +bookInfo['chapter_length_lowerbound']+" to " + bookInfo['chapter_length_upperbound'] + " words in length.";
+            +bookInfo['chapter_length_lowerbound']+" to " + bookInfo['chapter_length_upperbound'] + " words in length," +
+            "and do not include any other text other than the chapter and no other comments from the prompt.";
         const chapter = await NovllUtil.getGptResponse(chapterPrompt, true, messages);
 
         messages.push({

@@ -29,7 +29,11 @@ async function getImageFromText(bookText) {
     return response.data.data[0].url;
 }
 
+async function illustrateBookPages(book){
+
+}
 
 module.exports = {
-    getImageFromText
+    getImageFromText,
+    illustrateBookPages
 };

@@ -1,4 +1,5 @@
 const Author = require('./Author');
+// const Illustrator = require('./Illustrator');
 const NovllUtil = require('./NovllUtil')
 
 let chapter_length_lowerbound = 500;
@@ -44,8 +45,24 @@ async function getBook(id) {
     return {}
 }
 
+async function getChildrensBook(bookDetails){
+    let childrensBook = await buildBook(bookDetails);
+    let paginatedBook = paginate(childrensBook);
+    // let illustratedPaginatedBook = Illustrator.illustrateBookPages(childrensBook)
+}
+
+function paginate(book){
+    let paginatedBook = {};
+
+    console.log('book')
+    console.log(book)
+
+    return paginatedBook;
+}
+
 module.exports = {
     getBookIdeas,
     buildBook,
-    getBook
+    getBook,
+    getChildrensBook
 };

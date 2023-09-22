@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
     addEventListenerById("book_idea_preferences_submit", handleIdeasRequest, "click");
     addEventListenerById("more_concepts_submit", handleIdeasRequest, "click");
     addEventListenerById("create_book_submit", handleCreateBook, "click");
-    addEventListenerById("create_kids_book_submit", handleCreateKidsBook, "click");
 });
 
 function addEventListenerById(id, handler, type) {
@@ -70,32 +69,6 @@ async function handleCreateBook() {
     console.log()
 
     await fetch(full_base_url + '/book/build', {
-        // mode: 'no-cors',
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(book_object)
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data)
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-
-async function handleCreateKidsBook() {
-    console.log('Creating book!')
-
-    const book_object = {
-        "title": document.getElementById("your_book_title").innerHTML,
-        "genre": document.getElementById("your_book_genre").innerHTML,
-        "num_chapters": document.getElementById("num_chapters").value,
-        "synopsis": document.getElementById("your_book_synopsis").innerHTML,
-    }
-
-    console.log()
-
-    await fetch(full_base_url + '/book/kids/build', {
         // mode: 'no-cors',
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
