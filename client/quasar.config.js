@@ -87,9 +87,7 @@ module.exports = configure(function (/* ctx */) {
           ws: true,
           changeOrigin: true,
           secure: false,
-          pathRewrite: {
-            "^/api": "",
-          },
+          rewrite: (path) => path.replace(/^\/api/, ''),
           logLevel: "debug",
         },
       },

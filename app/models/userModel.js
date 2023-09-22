@@ -4,9 +4,7 @@ const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-
-
-const adminLevel = ['ban', 'user', 'critic', 'blogger', 'contributor', 'editor', 'admin'];
+const adminLevel = ['family', 'single', 'child', 'admin'];
 const schemaOptions = {
 	id: false,
 	timestamps: {},
@@ -14,10 +12,11 @@ const schemaOptions = {
 	toObject: 	{virtuals: true}
 };
 
-
 const userSchema = new Schema({
 	email:String,
 	password:String,
+	accountType: String,
+	relatedAccounts:[{ type: Schema.Types.ObjectId, ref: 'user'}],
   facebook: {
   	email: String,
     id: 	 String,
@@ -32,6 +31,9 @@ const userSchema = new Schema({
 	biography: 						String,
 	photo: 								{ type: String},
 	lastLogin:            { type: Date, default: Date.now },
+	booksHistory:	{ type: Schema.Types.ObjectId, ref: 'books'},
+	ideaHistory: { type: Schema.Types.ObjectId, ref: 'ideaHistory'},
+	searchTermCombos: { type: Schema.Types.ObjectId, ref: 'searchTermCombos'},
 }, schemaOptions);
 
 // for review populate
