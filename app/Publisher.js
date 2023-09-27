@@ -53,6 +53,7 @@ async function getChildrensBook(bookDetails){
 
 function paginate(book){
     let paginatedBook = {};
+    let chapter_numbers = Object.keys(book);
 
     console.log('book')
     console.log(book)
