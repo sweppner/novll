@@ -8,44 +8,15 @@ const role_content = "You are an expert AI author who has the ability to write w
 
 const age_setting = 'Adults'
 
+
+
 async function getBookIdeas(bookConceptPreferences) {
 
-    let bookAuthor = '';
-    let bookTitle = '';
-    let bookGenre = '';
-    let bookConcept = '';
-    let bookNumChapters = 10;
-    let num_ideas = bookConceptPreferences['num_ideas']
+    const bookIdeasPrompt = bookConceptPreferences['ideas_prompt'];
+    const num_ideas = bookConceptPreferences['num_ideas']
 
     console.log('bookConceptPreferences')
     console.log(bookConceptPreferences)
-
-    if(bookConceptPreferences.hasOwnProperty('book_author')){
-        bookAuthor = bookConceptPreferences['book_author']
-    }
-
-    if(bookConceptPreferences.hasOwnProperty('book_title')){
-        bookTitle = bookConceptPreferences['book_title']
-    }
-
-    if(bookConceptPreferences.hasOwnProperty('book_genre')){
-        bookGenre = bookConceptPreferences['book_genre']
-    }
-
-    if(bookConceptPreferences.hasOwnProperty('book_concept')){
-        bookConcept = bookConceptPreferences['book_concept']
-    }
-
-    if(bookConceptPreferences.hasOwnProperty('num_chapters')){
-        bookNumChapters = bookConceptPreferences['num_chapters']
-    }
-
-    console.log("Requesting book ideas based on Author [ " + bookAuthor + " ], title [ " + bookTitle + " ], " +
-        "genre ["+bookGenre+'], and concept ['+bookConcept+']. Make sure that these ideas are inspired by ' +
-        'but not measurably derivative of the original work. They cant reference any names, titles, or other' +
-        ' concepts used in any of the authors other works');
-
-    const bookIdeasPrompt = buildBookIdeaQuery(bookAuthor, bookTitle, bookTitle, bookConcept, num_ideas);
 
     try{
         console.log("Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.");
@@ -54,9 +25,59 @@ async function getBookIdeas(bookConceptPreferences) {
         return await NovllUtil.extractArrayFromString(bookIdeas);
     }catch(error){
         console.log(error); // Error: "It broke"
-        return await getBookIdeas(bookConcept);
+        return await getBookIdeas(bookConceptPreferences);
     }
 }
+//
+// async function getBookIdeas(bookConceptPreferences) {
+//
+//     let bookAuthor = '';
+//     let bookTitle = '';
+//     let bookGenre = '';
+//     let bookConcept = '';
+//     let bookNumChapters = 10;
+//     let num_ideas = bookConceptPreferences['num_ideas']
+//
+//     console.log('bookConceptPreferences')
+//     console.log(bookConceptPreferences)
+//
+//     if(bookConceptPreferences.hasOwnProperty('book_author')){
+//         bookAuthor = bookConceptPreferences['book_author']
+//     }
+//
+//     if(bookConceptPreferences.hasOwnProperty('book_title')){
+//         bookTitle = bookConceptPreferences['book_title']
+//     }
+//
+//     if(bookConceptPreferences.hasOwnProperty('book_genre')){
+//         bookGenre = bookConceptPreferences['book_genre']
+//     }
+//
+//     if(bookConceptPreferences.hasOwnProperty('book_concept')){
+//         bookConcept = bookConceptPreferences['book_concept']
+//     }
+//
+//     if(bookConceptPreferences.hasOwnProperty('num_chapters')){
+//         bookNumChapters = bookConceptPreferences['num_chapters']
+//     }
+//
+//     console.log("Requesting book ideas based on Author [ " + bookAuthor + " ], title [ " + bookTitle + " ], " +
+//         "genre ["+bookGenre+'], and concept ['+bookConcept+']. Make sure that these ideas are inspired by ' +
+//         'but not measurably derivative of the original work. They cant reference any names, titles, or other' +
+//         ' concepts used in any of the authors other works');
+//
+//     const bookIdeasPrompt = buildBookIdeaQuery(bookAuthor, bookTitle, bookTitle, bookConcept, num_ideas);
+//
+//     try{
+//         console.log("Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.");
+//         const bookIdeas = await NovllUtil.getGptResponse(bookIdeasPrompt);
+//         console.log("["+num_ideas.toString()+"] ideas fetched.")
+//         return await NovllUtil.extractArrayFromString(bookIdeas);
+//     }catch(error){
+//         console.log(error); // Error: "It broke"
+//         return await getBookIdeas(bookConcept);
+//     }
+// }
 
 // const messages = [
 //     { role: 'system', content: role_content },

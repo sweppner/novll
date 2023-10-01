@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+      <link rel="stylesheet" href="assets/css/style.css">
+      <title>The Story Bloom - Children's books made for your kid</title>
+  </head>
+  <body>
+  <!-- multistep form -->
+  <div class="row">
+      <div class="column">
+          <form>
+              <!-- fieldsets -->
+              <fieldset>
+                  <legend>Book Features</legend>
+                  <h3 class="fs-subtitle">We'll use this to come up with some ideas for books your child might like</h3>
+                  <h4 class="fs-subtitle">Answer some quick questions and we'll do the rest! </h4>
+                  <input id="child_age" type="text" name="child_age" placeholder="How old is your child?" /><br />
+                  <input id="child_interests" type="text" name="child_interests" placeholder="What are some of your child's interests?" /><br />
+                  <input id="illustration_style" type="text" name="illustration_style" placeholder="Describe the style of illustration your child would like?" /><br />
+                  <textarea id="characters" type="text" name="characters" placeholder="Do you have any preferences about the characters? IE Would you like them to be animals? Humans? Different colored shapes?" ></textarea><br />
+                  <textarea id="settings" type="text" name="settings" placeholder="Are there any settings your child would like specifically? IE Space, a jungle, or the ocean?" ></textarea><br />
+                  <input id="emotions_include" type="text" name="book_genre" placeholder="What emotions would you like the characters to explore?" /><br />
+                  <textarea id="lessons" type="text" name="book_concept" placeholder="What lesson(s) would you like this story to teach?" ></textarea><br />
+                  <input id="num_pages" type="number" name="num_pages" placeholder="How long do you want your book to be (in pages)?" /><br />
+                  <!--          <input type="password" name="cpass" placeholder="Confirm Password" />-->
+                  <input id="book_idea_preferences_submit" type="button" name="next" value="Next" />
+              </fieldset>
+              <fieldset>
+                  <legend>Concept Selection</legend>
+                  <h3 class="fs-subtitle">Choose a story that you like</h3>
+                  <div id="book-ideas-list"></div>
+              </fieldset>
+          </form>
+      </div>
+      <div class="column concept-selection">
+          <h2 id="your_book_title">[Your new book's title]</h2>
+<!--          <h3 id="your_book_genre">[Your new book's genre]</h3>-->
+          <p id="your_book_synopsis">[Your book's synopsis]</p>
+          <input id="create_kids_book_submit" type="button" name="next" value="Write my kids book!" />
+          <div id="open_book">
+              <button id="myBtn">Open Modal</button>
+          </div>
+      </div>
+  </div>
+
+
+  <!-- The Modal -->
+  <div id="myModal" class="modal">
+
+      <!-- Modal content -->
+      <div class="modal-content">
+          <span class="close">&times;</span>
+
+          <div class="row" id="book_viewer">
+              <div class="column">
+                  <div id="left_page">
+                    <img id="page_illustration" src="">
+                  </div>
+                  <input id="previous_page" type="button" name="previous" value="Previous" />
+              </div>
+              <div class="column concept-selection">
+                  <div id="right_page">
+                      <div id="page_text"></div>
+                      <div id="page_number"></div>
+                  </div>
+                  <input id="next_page" type="button" name="next" value="Next" />
+              </div>
+          </div>
+      </div>
+
+  </div>
+
+
+
+  </body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="assets/js/client.js"></script>
+
+</html>

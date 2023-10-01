@@ -1,36 +1,50 @@
 const Author = require('./Author');
-// const Illustrator = require('./Illustrator');
+const KidsAuthor = require('./KidsAuthor');
+const Illustrator = require('./Illustrator');
 const NovllUtil = require('./NovllUtil')
 
-let chapter_length_lowerbound = 500;
-let chapter_length_upperbound = 3000;
 
 //get book ideas by book author and title
-async function getBookIdeas(bookConceptPreferences, num_ideas=5){
-    bookConceptPreferences['num_ideas'] = num_ideas
-
-    return await Author.getBookIdeas(bookConceptPreferences)
-    //TODO: for each chapter generate
+async function getBookIdeas(bookConceptPreferences){
+    console.log('Publisher - getBookIdeas')
+    if(bookConceptPreferences['reading_level']=='kids'){
+        console.log('Publisher - getBookIdeas - Kids book')
+        return await KidsAuthor.getBookIdeas(bookConceptPreferences);
+    }else{
+        console.log('Publisher - getBookIdeas - Adults book')
+        return await Author.getBookIdeas(bookConceptPreferences)
+    }
 }
 
 //build book by selected concept
 
 async function buildBook(bookDetails) {
 
-    bookDetails['chapter_length_lowerbound'] = chapter_length_lowerbound;
-    bookDetails['chapter_length_upperbound'] = chapter_length_upperbound;
+    console.log("bookDetails['reading_level']=='kids'")
+    console.log(bookDetails['reading_level']=='kids')
 
-    if (bookDetails && bookDetails.title && bookDetails.genre && bookDetails.num_chapters && bookDetails.synopsis) {
-        // Construct and return a string response
+    if(bookDetails['reading_level']=='kids') {
+        console.log('kids book')
+        try {
+            // Wait for the asynchronous function to complete
+            let book = await KidsAuthor.createBook(bookDetails);
+
+            let illustratedBook = Illustrator.illustrateBook(book);
+
+            return illustratedBook;
+        } catch (error) {
+            console.error('An error occurred:', error);
+        }
+    }else{
+        console.log('adults book')
         try {
             // Wait for the asynchronous function to complete
             return await Author.createBook(bookDetails);
         } catch (error) {
             console.error('An error occurred:', error);
         }
-    } else {
-        // res.status(400).send('Invalid JSON object. A "name" property is required.');
     }
+
     return {};
 }
 
@@ -45,25 +59,8 @@ async function getBook(id) {
     return {}
 }
 
-async function getChildrensBook(bookDetails){
-    let childrensBook = await buildBook(bookDetails);
-    let paginatedBook = paginate(childrensBook);
-    // let illustratedPaginatedBook = Illustrator.illustrateBookPages(childrensBook)
-}
-
-function paginate(book){
-    let paginatedBook = {};
-    let chapter_numbers = Object.keys(book);
-
-    console.log('book')
-    console.log(book)
-
-    return paginatedBook;
-}
-
 module.exports = {
     getBookIdeas,
     buildBook,
-    getBook,
-    getChildrensBook
+    getBook
 };

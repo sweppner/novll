@@ -39,6 +39,7 @@ const client = new MongoClient(uri, {
 
 
 async function getGptResponse(prompt, is_context=false, messages=[]){
+    // const prompt = object[]
     console.log('Prompt: '+prompt.substring(0, 75)+'...');
 
     if(is_context){
@@ -179,8 +180,28 @@ async function extractArrayFromString(str) {
     // return processObjectString(startIndex, endIndex, str);
 }
 
+function requestHasAllDetails(bookConceptPreferences, properties){
+    console.log('NovllUtil - requestHasAllDetails')
+
+    let propertyResponses = []
+
+    let has_details = false;
+    let is_first = true;
+
+    properties.forEach(function(property){
+        if(is_first){
+            has_details = (typeof bookConceptPreferences != "undefined");
+            is_first = false;
+        }else{
+            has_details = (has_details && bookConceptPreferences.hasOwnProperty(property))
+        }
+    });
+    return has_details
+}
+
 module.exports = {
     writeToMongo,
+    requestHasAllDetails,
     getBookByID,
     getGptResponse,
     extractJSONFromString,

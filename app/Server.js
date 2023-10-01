@@ -1,6 +1,6 @@
+const KidCustomer = require('./KidCustomer');
+const AdultCustomer = require('./AdultCustomer');
 const Publisher = require('./Publisher');
-// const NovllUtil = require('./NovllUtil')
-// const Author = require('./Author');
 const fs = require('fs');
 const express = require('express');
 const app = express();
@@ -55,13 +55,26 @@ app.get('/book/ideas', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
     try{
-        const bookIdeas = await Publisher.getBookIdeas(req.query);
+        const bookIdeas = await AdultCustomer.getBookIdeas(req.query);
         res.status(200).send(JSON.stringify(bookIdeas));
     }catch(error){
         console.error('An error occurred:', error);
         res.status(500).send('Internal Server Error');
     }
 
+});
+
+//get book ideas by book author and title
+app.get('/kids/book/ideas', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    console.log('Server - app.get - "/kids/book/ideas"')
+    try {
+        const bookIdeas = await KidCustomer.getBookIdeas(req.query);
+        res.status(200).send(JSON.stringify(bookIdeas));
+    } catch (error) {
+        console.error('An error occurred:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 //build book by selected concept
@@ -75,7 +88,7 @@ app.post('/book/build', async (req, res) => {
         let response = {'message':'Your JSON object has been processed.'};
         try {
             // Wait for the asynchronous function to complete
-            const book = await Publisher.buildBook(jsonInput);
+            const book = await AdultCustomer.getNewBook(jsonInput);
 
             // Send the response back to the client
             res.status(200).send(book);
@@ -92,17 +105,16 @@ app.post('/book/build', async (req, res) => {
     }
 });
 
-app.post('/book/kids/build', async (req, res) => {
+app.post('/kids/book/build', async (req, res) => {
     const jsonInput = req.body; // Get JSON payload
-    // console.log(req.body);
-    // res.setHeader('Content-Type', 'application/json');
 
-    if (jsonInput && jsonInput.title && jsonInput.genre && jsonInput.num_chapters && jsonInput.synopsis) {
+    // if (jsonInput && jsonInput['child_age'] && jsonInput['child_interests'] && jsonInput['illustration_style']
+    //     && jsonInput['characters'] && jsonInput['settings'] && jsonInput['emotions_include'] && jsonInput['lessons']) {
         // Construct and return a string response
         let response = {'message':'Your JSON object has been processed.'};
         try {
             // Wait for the asynchronous function to complete
-            const book = await Publisher.getChildrensBook(jsonInput);
+            const book = await KidCustomer.getNewBook(jsonInput);
 
             // Send the response back to the client
             res.status(200).send(book);
@@ -114,9 +126,9 @@ app.post('/book/kids/build', async (req, res) => {
         console.log('response')
         console.log(response)
         res.status(200).send();
-    } else {
-        res.status(400).send('Invalid JSON object. A "name" property is required.');
-    }
+    // } else {
+    //     res.status(400).send('Invalid JSON object. A "name" property is required.');
+    // }
 });
 
 //get book ideas by genre and concept
@@ -170,72 +182,3 @@ app.use((req, res, next) => {
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
 });
-
-
-//get book ideas by book title
-// app.get('/ideas/title', async (req, res) => {
-//     const bookName = req.query.name;
-//     // res.setHeader('Content-Type', 'application/json');
-//     if (!bookName) {
-//         res.status(400).send('Please provide a book name');
-//         return;
-//     }
-//
-//     try {
-//         // Wait for the asynchronous function to complete
-//         const bookIdeas = await Author.fetchBookIdeasByBook(bookName);
-//
-//         // Send the response back to the client
-//         res.status(200).send(bookIdeas);
-//     } catch (error) {
-//         console.error('An error occurred:', error);
-//         res.status(500).send('Internal Server Error');
-//     }
-// });
-
-//get book ideas by genre and concept
-// app.get('/ideas/genre_concept', async (req, res) => {
-//     const book_genre = req.query['genre'];
-//     const book_concept = req.query['concept'];
-//
-//     if (!book_genre || !book_concept) {
-//         res.status(400).send('Please provide a book name');
-//         return;
-//     }
-//
-//     try {
-//         // Wait for the asynchronous function to complete
-//         const bookIdeas = await Author.fetchBookIdeasByGenreAndConcept(book_genre, book_concept)
-//         console.log(bookIdeas)
-//         // Send the response back to the client
-//         res.status(200).send(bookIdeas);
-//     } catch (error) {
-//         console.error('An error occurred:', error);
-//         res.status(500).send('Internal Server Error');
-//     }
-// });
-
-
-
-//
-//
-// //get book ideas by book author
-// app.get('/ideas/author', async (req, res) => {
-//     const authorName = req.query.name;
-//
-//     if (!authorName) {
-//         res.status(400).send('Please provide a book name');
-//         return;
-//     }
-//
-//     try {
-//         // Wait for the asynchronous function to complete
-//         const bookIdeas = await Author.fetchBookIdeasByAuthor(authorName);
-//
-//         // Send the response back to the client
-//         res.status(200).send(bookIdeas);
-//     } catch (error) {
-//         console.error('An error occurred:', error);
-//         res.status(500).send('Internal Server Error');
-//     }
-// });
