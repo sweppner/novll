@@ -23,18 +23,23 @@ async function buildBook(bookDetails) {
     console.log("bookDetails['reading_level']=='kids'")
     console.log(bookDetails['reading_level']=='kids')
 
+    let book = {}
     if(bookDetails['reading_level']=='kids') {
         console.log('kids book')
         try {
             // Wait for the asynchronous function to complete
-            let book = await KidsAuthor.createBook(bookDetails);
+            book['data'] = await KidsAuthor.createBook(bookDetails);
 
-            let illustratedBook = Illustrator.illustrateBook(book);
-
-            return illustratedBook;
-        } catch (error) {
+        }catch (error) {
             console.error('An error occurred:', error);
         }
+
+        console.log('Publisher - buildBook - book[\'data\']')
+        console.log(book['data'])
+
+        let illustratedBook = await Illustrator.illustrateBook(book['data']);
+        return illustratedBook;
+
     }else{
         console.log('adults book')
         try {

@@ -71,8 +71,8 @@ async function createBook(bookInfo) {
 
     // Meaningful Illustrations: Detailed and relevant illustrations enhance comprehension and attract young readers.
 
-    let outlinePrompt = "Write a full children's book titled \""+bookInfo['your_book_title:']+"\" " +
-        "based on the following synopsis: ["+bookInfo['your_book_synopsis:']+"]. This story should: " +
+    let outlinePrompt = "Write a full children's book titled \""+bookInfo['your_book_title']+"\" " +
+        "directly following the story in the synopsis: ["+bookInfo['your_book_synopsis']+"]. This story should: " +
         "   - aid childhood cognitive development for a child "+bookInfo['child_age']+" years old, nurture independent thinking, and foster joy in reading." +
         "   - reflect the children's interests ["+bookInfo['child_interests']+"] " +
         "   - introduce children to age appropriate rich vocabulary while ensuring the story remains readable, engaging and relatable" +
@@ -108,11 +108,12 @@ async function createBook(bookInfo) {
 
     let outlineJSONPrompt = "Create a JSON object based on these pages ["+pages+"] that contains a key for each page, for the following keys and values:" +
         "\"settings\": (JSON) a JSON object where each key is the name of a setting whose value is a string describing the setting in vivid visual detail," +
-        "\"characters\": (JSON) a JSON object where each key is the name of a character whose value is a strings describing in vivid, visual detail of what they look like" +
+        "\"characters\": (JSON) a JSON object where each key is the name of a character whose value is a string with a simple, purely visual description of that character" +
         "\"pages\": (JSON) a JSON object with a key for each page number, where the value is a JSON object with the following keys and values: " +
         "   \"text\": (text) the narrative story text for the page, which should be eloquent and between " + bookInfo['page_words_length_lowerbound']+ " and " + bookInfo['page_words_length_upperbound']+ " words long. " +
-        "   \"setting\": (text) the name of the setting where this part of the story happens " +
-        "   \"characters\": (array) an array of strings, containing each characters name that is involved in the part of the story on this page. " +
+        "   \"scene\": (text) a simple visual description of the scene with characters, where they are, and what they're doing " +
+        "   \"action\": (text) a simple description of the characters and what they are doing" +
+        "   \"characters\": (array) an array of strings, each the name of a character present in this page. " +
         "   \"image\": (text) a detailed description of the illustration, which should highlight which characters are featured on this page, what they are doing, and where they are doing it.";
 
     let outlineJSONString = await NovllUtil.getGptResponse(outlineJSONPrompt, true, messages);

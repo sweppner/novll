@@ -8,6 +8,7 @@
       <title>The Story Bloom - Children's books made for your kid</title>
   </head>
   <body>
+
   <!-- multistep form -->
   <div class="row">
       <div class="column">
@@ -15,8 +16,8 @@
               <!-- fieldsets -->
               <fieldset>
                   <legend>Book Features</legend>
-                  <h3 class="fs-subtitle">We'll use this to come up with some ideas for books your child might like</h3>
-                  <h4 class="fs-subtitle">Answer some quick questions and we'll do the rest! </h4>
+                  <h3 class="fs-subtitle">We'll use this to come up with some ideas for books your child might like </h3>
+                  <h4 class="fs-subtitle">Answer some quick questions and we'll do the rest!</h4>
                   <input id="child_age" type="text" name="child_age" placeholder="How old is your child?" /><br />
                   <input id="child_interests" type="text" name="child_interests" placeholder="What are some of your child's interests?" /><br />
                   <input id="illustration_style" type="text" name="illustration_style" placeholder="Describe the style of illustration your child would like?" /><br />
@@ -25,7 +26,6 @@
                   <input id="emotions_include" type="text" name="book_genre" placeholder="What emotions would you like the characters to explore?" /><br />
                   <textarea id="lessons" type="text" name="book_concept" placeholder="What lesson(s) would you like this story to teach?" ></textarea><br />
                   <input id="num_pages" type="number" name="num_pages" placeholder="How long do you want your book to be (in pages)?" /><br />
-                  <!--          <input type="password" name="cpass" placeholder="Confirm Password" />-->
                   <input id="book_idea_preferences_submit" type="button" name="next" value="Next" />
               </fieldset>
               <fieldset>
@@ -41,7 +41,7 @@
           <p id="your_book_synopsis">[Your book's synopsis]</p>
           <input id="create_kids_book_submit" type="button" name="next" value="Write my kids book!" />
           <div id="open_book">
-              <button id="myBtn">Open Modal</button>
+              <button id="myBtn">Read Book!</button>
           </div>
       </div>
   </div>
@@ -57,9 +57,9 @@
           <div class="row" id="book_viewer">
               <div class="column">
                   <div id="left_page">
-                    <img id="page_illustration" src="">
+                    <img class="illustration" id="page_illustration" src="">
                   </div>
-                  <input id="previous_page" type="button" name="previous" value="Previous" />
+                  <input id="prev_page" type="button" name="previous" value="Previous" />
               </div>
               <div class="column concept-selection">
                   <div id="right_page">
@@ -70,9 +70,7 @@
               </div>
           </div>
       </div>
-
   </div>
-
 
 
   </body>

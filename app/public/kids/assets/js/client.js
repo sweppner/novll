@@ -1,11 +1,14 @@
 let base_url = 'http://localhost';
 let port = '3000';
 let full_base_url = base_url+':'+port;
+var currentBook = {};
 
 document.addEventListener("DOMContentLoaded", () => {
     addEventListenerById("book_idea_preferences_submit", handleIdeasRequest, "click");
     addEventListenerById("more_concepts_submit", handleIdeasRequest, "click");
     addEventListenerById("create_kids_book_submit", handleCreateBook, "click");
+
+
 });
 
 function addEventListenerById(id, handler, type) {
@@ -86,16 +89,55 @@ async function handleCreateBook() {
         .then(response => response.json())
         .then(data => {
             console.log('Success:', data);
-            let view_book_button = document.getElementById('open_book')
-            view_book_button.innerHTML = '<input id="view_book" type="button" name="view_book" value="View my kids book!" />'
-            view_book_button.addEventListener('click', openBookView(data))
+            // let view_book_button = document.getElementById('open_book')
+            // view_book_button.innerHTML = '<input id="view_book" type="button" name="view_book" value="View my kids book!" />'
+            // view_book_button.addEventListener('click', openBookView(data))
+            currentBook = data;
+            currentBook['currentPage'] = 1;
+            let currentPageObject = currentBook['pages']['1'];
+            currentPageObject['pageNumber'] = 1
+            setPageView(currentPageObject)
+            addEventListenerById("next_page", nextPage, "click");
+            addEventListenerById("prev_page", prevPage, "click");
         })
         .catch(error => console.error('Error:', error));
 }
 
-function openBookView(bookData){
+function setPageView(page){
+    let img_url = page['image_url'];
+    let page_text = page['text'];
+    let page_number = page['pageNumber'];
 
+    document.getElementById("page_illustration").src = img_url;
+    document.getElementById("page_text").innerHTML = page_text;
+    document.getElementById("page_number").innerHTML = page_number.toString();
 }
+
+function prevPage(){
+    console.log('prevPage')
+    const currentPage = currentBook['currentPage'];
+    if(currentPage!=1){
+        const prevPageNumber = currentPage - 1;
+        const prevPage = currentBook['pages'][prevPageNumber.toString()];
+        prevPage['pageNumber'] = prevPageNumber;
+        setPageView(prevPage);
+        currentBook['currentPage'] = prevPageNumber;
+    }
+}
+
+function nextPage(){
+    console.log('nextPage')
+    const currentPage = currentBook['currentPage'];
+    const numPages = Object.keys(currentBook['pages']).length
+    if(currentPage+1!=numPages){
+        const nextPageNumber = currentPage + 1
+        const nextPage = currentBook['pages'][nextPageNumber.toString()];
+        nextPage['pageNumber'] = nextPageNumber;
+        setPageView(nextPage);
+        currentBook['currentPage'] = nextPageNumber;
+    }
+}
+
 
 async function fetchBookIdeas(child_age, child_interests, illustration_style, characters, settings, emotions_include, lessons) {
     console.log('Favorite book and author submitted!')
@@ -170,6 +212,8 @@ var span = document.getElementsByClassName("close")[0];
 // When the user clicks the button, open the modal
 btn.onclick = function() {
     modal.style.display = "block";
+
+
 }
 
 // When the user clicks on <span> (x), close the modal
