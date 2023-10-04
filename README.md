@@ -18,6 +18,11 @@ app/
 Depending on the application (what type of book we want to write), the client.js fetches a REST call to Server.js which interacts with a customer persona that requests the book. 
 
 Web (client.js) <-> Server.js <-> *Customer.js <-> Publisher.js <-> *Author.js
+
+
+
+(this only views well in edit mode)
+Web (client.js) <-> Server.js <-> *Customer.js <-> Publisher.js <-> *Author.js
                                -> (KidsCustomer.js)              -> (KidsAuthor.js)
                                -> (AdultCustomer.js)             -> (Author.js)
                                                                  -> Illustrator.js
