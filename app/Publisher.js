@@ -1,17 +1,24 @@
 const Author = require('./Author');
 const KidsAuthor = require('./KidsAuthor');
 const Illustrator = require('./Illustrator');
+const StableIllustrator = require('./StableIllustrator');
 const NovllUtil = require('./NovllUtil')
 
 
 //get book ideas by book author and title
 async function getBookIdeas(bookConceptPreferences){
-    console.log('Publisher - getBookIdeas')
+
+    NovllUtil.printLog('Publisher.js', 'getBookIdeas(bookConceptPreferences)...');
+
     if(bookConceptPreferences['reading_level']=='kids'){
-        console.log('Publisher - getBookIdeas - Kids book')
+
+        NovllUtil.printLog('Publisher.js', 'getBookIdeas(bookConceptPreferences)...', false, '','',true,'Kids book');
+
         return await KidsAuthor.getBookIdeas(bookConceptPreferences);
     }else{
-        console.log('Publisher - getBookIdeas - Adults book')
+
+        NovllUtil.printLog('Publisher.js', 'getBookIdeas(bookConceptPreferences)...', false, '','',true,'Adults book');
+
         return await Author.getBookIdeas(bookConceptPreferences)
     }
 }
@@ -20,11 +27,12 @@ async function getBookIdeas(bookConceptPreferences){
 
 async function buildBook(bookDetails) {
 
-    console.log("bookDetails['reading_level']=='kids'")
-    console.log(bookDetails['reading_level']=='kids')
+    NovllUtil.printLog('Publisher.js', 'buildBook(bookDetails)...', true,'bookDetails[\'reading_level\']==\'kids\'',bookDetails['reading_level']=='kids');
 
     let book = {}
     if(bookDetails['reading_level']=='kids') {
+        NovllUtil.printLog('Publisher.js', 'buildBook(bookDetails)...', false,'', '',true,'kids book');
+
         console.log('kids book')
         try {
             // Wait for the asynchronous function to complete
@@ -34,14 +42,16 @@ async function buildBook(bookDetails) {
             console.error('An error occurred:', error);
         }
 
-        console.log('Publisher - buildBook - book[\'data\']')
-        console.log(book['data'])
+        NovllUtil.printLog('Publisher.js', 'buildBook(bookDetails)...', true,'variable: book[\'data\']', book['data']);
 
-        let illustratedBook = await Illustrator.illustrateBook(book['data']);
+        // let illustratedBook = await Illustrator.illustrateBook(book['data']);
+        let illustratedBook = await StableIllustrator.illustrateBook(book['data']);
         return illustratedBook;
 
     }else{
-        console.log('adults book')
+
+        NovllUtil.printLog('Publisher.js', 'buildBook(bookDetails)...', false,'', '',true,'adults book');
+
         try {
             // Wait for the asynchronous function to complete
             return await Author.createBook(bookDetails);

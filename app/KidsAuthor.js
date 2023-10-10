@@ -10,13 +10,16 @@ async function getBookIdeas(bookConceptPreferences) {
     const bookIdeasPrompt = getBookIdeaPrompt(bookConceptPreferences);
     const num_ideas = bookConceptPreferences['num_ideas'];
 
-    console.log('bookIdeasPrompt')
-    console.log(bookIdeasPrompt)
+    NovllUtil.printLog('KidsAuthor.js', 'getBookIdeas(bookConceptPreferences)...', true, 'bookIdeasPrompt',bookIdeasPrompt);
 
     try{
-        console.log("Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.");
+
+        NovllUtil.printLog('KidsAuthor.js', 'getBookIdeas(bookConceptPreferences)...', false, '','',true,"Using openai api version ["+NovllUtil.gpt_version+"] to generate [ " + num_ideas.toString() + " ] book ideas.");
+
         const bookIdeas = await NovllUtil.getGptResponse(bookIdeasPrompt);
-        console.log("["+num_ideas.toString()+"] ideas fetched.")
+
+        NovllUtil.printLog('KidsAuthor.js', 'getBookIdeas(bookConceptPreferences)...', false, '','',true,"["+num_ideas.toString()+"] ideas fetched.");
+
         return await NovllUtil.extractArrayFromString(bookIdeas);
     }catch(error){
         console.log(error); // Error: "It broke"
@@ -34,11 +37,11 @@ function getBookIdeaPrompt(bookConceptPreferences){
     let emotions_include = bookConceptPreferences['emotions_include'];
     let lessons = bookConceptPreferences['lessons'];
 
-    console.log("Requesting children's book ideas for children " + child_age + "years old. They are interested in " +
-        "[" + child_interests + "]. The book ideas should include the following types of characters: ["
-        + characters + "], and be based in one of these settings [" + settings + "]. The book concepts should include " +
-        "stories where the characters explore the following types of emotions [" + emotions_include + "], and the " +
-        "following lessons [" + lessons + "].");
+    // console.log("Requesting children's book ideas for children " + child_age + " years old. They are interested in " +
+    //     "[" + child_interests + "]. The book ideas should include the following types of characters: ["
+    //     + characters + "], and be based in one of these settings [" + settings + "]. The book concepts should include " +
+    //     "stories where the characters explore the following types of emotions [" + emotions_include + "], and the " +
+    //     "following lessons [" + lessons + "].");
 
     const includesDescription = "Each book idea including a title, a brief concept, a synopsis that is 5 " +
         "sentences long, a genre, a hyper specific artistic style (example of a similar artist, medium, and color scheme) " +
@@ -50,7 +53,7 @@ function getBookIdeaPrompt(bookConceptPreferences){
         "use the key \"style\", and for the description of the cover art for the front of the book use the " +
         "key \"cover_art\"."
 
-    let prompt = "Provide me with ideas for " + 5 + " children's books for children " + child_age + "years " +
+    let prompt = "Provide me with ideas for " + 5 + " children's books for children " + child_age + " years " +
         "old. They are interested in [" + child_interests + "]. The book ideas should include the following types " +
         "of characters: [" + characters + "], and be based in one of these settings [" + settings + "]. The book " +
         "concepts should include stories where the characters explore the following types of emotions [" +
@@ -103,8 +106,7 @@ async function createBook(bookInfo) {
         role: 'assistant', content: pages
     });
 
-    console.log('outline')
-    console.log(outline)
+    NovllUtil.printLog('KidsAuthor.js', 'createBook(bookInfo)...', true, 'outline',outline);
 
     let outlineJSONPrompt = "Create a JSON object based on these pages ["+pages+"] that contains a key for each page, for the following keys and values:" +
         "\"settings\": (JSON) a JSON object where each key is the name of a setting whose value is a string describing the setting in vivid visual detail," +
@@ -121,7 +123,8 @@ async function createBook(bookInfo) {
     let outlineJSON = await NovllUtil.extractJSONFromString(outlineJSONString)
 
     if(outlineJSON['success']){
-        console.log('Returned valid json')
+        NovllUtil.printLog('KidsAuthor.js', 'createBook(bookInfo)...', false, '','',true,'Returned valid json');
+
         messages.push({
             role:'user', content: outlineJSONPrompt,
             role: 'assistant', content: outlineJSONString
@@ -131,7 +134,7 @@ async function createBook(bookInfo) {
         return outlineJSON;
 
     }else{
-        console.log('Returned invalid json')
+        NovllUtil.printLog('KidsAuthor.js', 'createBook(bookInfo)...', false, '','',true,'Returned invalid json');
 
         if( outlineJSON.hasOwnProperty('data')){
             let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
@@ -139,7 +142,8 @@ async function createBook(bookInfo) {
             outlineJSON = await NovllUtil.getGptResponse(outlineJSONFixPrompt);
             outlineJSON = await NovllUtil.extractJSONFromString(outlineJSON);
         }else{
-            console.log('Needs work')
+            NovllUtil.printLog('KidsAuthor.js', 'createBook(bookInfo)...', false, '','',true,'Needs work');
+
         }
     }
 }

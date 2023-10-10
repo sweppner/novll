@@ -7,8 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addEventListenerById("book_idea_preferences_submit", handleIdeasRequest, "click");
     addEventListenerById("more_concepts_submit", handleIdeasRequest, "click");
     addEventListenerById("create_kids_book_submit", handleCreateBook, "click");
-
-
+    disableButton('readBook');
 });
 
 function addEventListenerById(id, handler, type) {
@@ -62,6 +61,7 @@ function addRadioButtonListeners(){
 
 
 async function handleCreateBook() {
+    disableButton('readBook')
     console.log('Creating book!')
 
     const book_object = {
@@ -99,6 +99,7 @@ async function handleCreateBook() {
             setPageView(currentPageObject)
             addEventListenerById("next_page", nextPage, "click");
             addEventListenerById("prev_page", prevPage, "click");
+            enableButton('readBook');
         })
         .catch(error => console.error('Error:', error));
 }
@@ -204,7 +205,7 @@ function generateHTMLList(books) {
 var modal = document.getElementById("myModal");
 
 // Get the button that opens the modal
-var btn = document.getElementById("myBtn");
+var btn = document.getElementById("readBook");
 
 // Get the <span> element that closes the modal
 var span = document.getElementsByClassName("close")[0];
@@ -225,5 +226,23 @@ span.onclick = function() {
 window.onclick = function(event) {
     if (event.target == modal) {
         modal.style.display = "none";
+    }
+}
+
+function disableButton(buttonId) {
+    const button = document.getElementById(buttonId);
+    if (button) {
+        button.disabled = true;
+    } else {
+        console.error('Button with the given ID not found.');
+    }
+}
+
+function enableButton(buttonId) {
+    const button = document.getElementById(buttonId);
+    if (button) {
+        button.disabled = false;
+    } else {
+        console.error('Button with the given ID not found.');
     }
 }

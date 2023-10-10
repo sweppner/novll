@@ -1,6 +1,7 @@
 const KidCustomer = require('./KidCustomer');
 const AdultCustomer = require('./AdultCustomer');
 const Publisher = require('./Publisher');
+const NovllUtil = require('./NovllUtil');
 const fs = require('fs');
 const express = require('express');
 const app = express();
@@ -67,7 +68,8 @@ app.get('/book/ideas', async (req, res) => {
 //get book ideas by book author and title
 app.get('/kids/book/ideas', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    console.log('Server - app.get - "/kids/book/ideas"')
+    NovllUtil.printLog('Server.js', 'get(\'/kids/book/ideas\'...')
+
     try {
         const bookIdeas = await KidCustomer.getBookIdeas(req.query);
         res.status(200).send(JSON.stringify(bookIdeas));
@@ -97,8 +99,9 @@ app.post('/book/build', async (req, res) => {
             res.status(500).send('Internal Server Error');
         }
         response = JSON.stringify(response);
-        console.log('response')
-        console.log(response)
+
+        NovllUtil.printLog('Server.js', 'app.post(\'/book/build\'...', true,'response',response);
+
         res.status(200).send();
     } else {
         res.status(400).send('Invalid JSON object. A "name" property is required.');
@@ -123,8 +126,9 @@ app.post('/kids/book/build', async (req, res) => {
             res.status(500).send('Internal Server Error');
         }
         response = JSON.stringify(response);
-        console.log('response')
-        console.log(response)
+
+        NovllUtil.printLog('Server.js', 'app.post(\'/kids/book/build\'...', true,'response',response);
+
         res.status(200).send();
     // } else {
     //     res.status(400).send('Invalid JSON object. A "name" property is required.');

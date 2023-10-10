@@ -1,6 +1,7 @@
+const Replicate = require("replicate");
 const NovllUtil = require('./NovllUtil')
-const OpenAIApi = require("openai");
-const {book} = require("../TestBook");
+// const OpenAIApi = require("openai");
+// const {book} = require("../TestBook");
 
 const censor_text = "the contents of this book cannot contain any inappropriate content, " +
     "this book is for a child.";
@@ -8,23 +9,16 @@ const censor_text = "the contents of this book cannot contain any inappropriate 
 require('dotenv').config();
 let context = ""
 
-const gpt_version = 'gpt-3.5-turbo-16k'
 
-const openai = new OpenAIApi({
-    apiKey: process.env.OPENAI_API_KEY // This is also the default, can be omitted
+const replicate = new Replicate({
+    auth: process.env.REPLICATE_API_TOKEN,
 });
 
-const role_content = "You are an expert AI children's book illustrator who has the ability to imagine and " +
-    "create beautiful illustrations for children's books for children of any age.";
-
-const messages = [
-    { role: 'system', content: role_content },
-];
 
 async function illustrateBook(book){
-
-    NovllUtil.printLog('Illustrator.js', 'illustrateBook(book)...', true,'book', book);
-
+    console.log('Illustrator - illustrateBook - book')
+    console.log(book)
+    await testTrainingModel(book);
     const bookDetails = book['preferences'];
     const illustrationStyle = bookDetails['illustration_style'];
     let charactersDescriptions = book['characters'];
@@ -64,11 +58,177 @@ async function illustrateBook(book){
     return book;
 }
 
-async function getImageFromText(text) {
-    NovllUtil.printLog('Illustrator.js', 'getImageFromText(text)...');
+async function illustrateBookWithTraining(book){
+    console.log('Illustrator - illustrateBook - book')
+    console.log(book)
+    const bookDetails = book['preferences'];
+    const illustrationStyle = bookDetails['illustration_style'];
+    let charactersDescriptions = book['characters'];
 
-    const image = await openai.images.generate({ prompt: text, n: 1});
-    return image['data'][0]['url'];
+    // create the page-by-page descriptions,
+    let pages = book['pages'];
+    let pageNumbers = Object.keys(pages);
+    let all_characters = book['characters'];
+    let all_settings = book['settings'];
+
+    let prompt = "";
+    for (const pageNumber of pageNumbers){
+        let page = pages[pageNumber];
+        let image_text = page['image'];
+        let characters = page['characters'];
+        let scene = page['scene'];
+        let action = page['action'];
+        let pageCharactersDescription = []
+        for(const character of characters){
+            let characterDescription = charactersDescriptions[character];
+            pageCharactersDescription.push(character + "'s description: " + characterDescription + ". ");
+        }
+
+        // Old prompt
+        // const finalScenePrompt = image_text + ". The image should be an illustration in the following style [" + illustrationStyle + " ]"
+
+        const finalScenePrompt = "A children's book illustration in the style of [" + illustrationStyle + "] that are fun and hyper realistic artwork of that style. " +
+            "This is what is happening in the illustration [" + image_text + "]. " +
+            "The characters in the scene must match these descriptions: [" + pageCharactersDescription.toString() + "]." +
+            "No text in image.";
+
+
+        const illustrationUrl = await getImageFromText(finalScenePrompt)
+        book['pages'][pageNumber]['image_url'] = illustrationUrl;
+        book['pages'][pageNumber]['image_dalle_prompt'] = finalScenePrompt;
+    }
+
+    return book;
+}
+
+function parseName(name, description){
+    return description.replace(name+", ", "");
+}
+
+async function testTrainingModel(book){
+    console.log('testing training model');
+    let characters = book['characters'];
+    let settings = book['settings'];
+    let style = book['preferences']['illustration_style'];
+    let model;
+
+    // let characterImages = {};
+    const characterList = Object.keys(characters);
+    const characterName = characterList[0];
+    const characterDescription = parseName(characterName, characters[characterName]);
+    const characterPrompt = "Create a new cartoon character that looks like this ["+characterDescription+"]"
+        + "and give me multiple headshots from different angles, make sure its the same character with the same " +
+        "face. The artwork should be in the style of : [" + style+ "]";
+    const characterHeadshotsImageUrl = await getImageFromText(characterPrompt);
+    const characterImageLocation = await NovllUtil.downloadImagesAndUpload([characterHeadshotsImageUrl]);
+    const modelName = 'test/'+book['preferences']['your_book_title'];
+    const hashedModelName = NovllUtil.hashString(modelName)
+    let training = await trainModelOnImage(characterName, characterImageLocation, hashedModelName);
+
+    console.log('training')
+    console.log(training)
+    console.log('Function executed!');
+    console.log('training.status')
+    console.log(training.status)
+    // console.log("\n".join(training.logs.split("\n")[-10]))
+    // executeEvery5SecondsFor2Minutes(training);
+}
+
+async function trainModel(book){
+    let characters = book['characters'];
+    let settings = book['settings'];
+    let style = book['preferences']['illustration_style'];
+    let model;
+
+    let characterImages = {};
+    const characterList = Object.keys(characters);
+    for(let character_index =0;  character_index < characterList.length; character_index++){
+        const characterName = characterList[character_index];
+        const characterDescription = parseName(characterName, characters[characterName]);
+        const characterPrompt = "Create a new cartoon character that looks like this ["+characterDescription+"]"
+           + "and give me multiple headshots from different angles, make sure its the same character with the same " +
+            "face. The artwork should be in the style of : [" + style+ "]";
+        const characterHeadshotsImageUrl = getImageFromText(characterPrompt);
+        const characterImageLocation = await NovllUtil.downloadImagesAndUpload([characterHeadshotsImageUrl])
+        characterImages[characterName] = characterImageLocation;
+    }
+
+    let sceneImages = {};
+    const settingsList = Object.keys(settings);
+    for(let setting_index =0;  setting_index < settingsList.length; setting_index++){
+        const settingName = characterList[setting_index];
+        const settingDescription = parseName(settingName, characters[settingName]);
+        const settingPrompt = "Create a new setting character that looks like this ["+settingDescription+"]"
+            + "and show the setting from different angles, make sure its the same setting with the same layout. " +
+            ". The artwork should be in the style of : [" + style+ "]\";";
+        const settingHeadshotsImageUrl = getImageFromText(settingPrompt);
+        const settingImageLocation = await NovllUtil.downloadImagesAndUpload(settingHeadshotsImageUrl)
+        sceneImages[settingName] = settingImageLocation;
+    }
+
+
+
+    return model;
+}
+
+async function getImageFromText(text) {
+
+
+    return await replicate.run(
+        "stability-ai/sdxl:1bfb924045802467cf8869d96b231a12e6aa994abfe37e337c63a4e49a8c6c41",
+        {
+            input: {
+                prompt:text
+            }
+        }
+    );
+}
+
+async function trainModelOnImage(text, zipLocation, model) {
+    model = model.replace(' ', '_')
+    model =
+    console.log('text');
+    console.log(text);
+
+    console.log('zipLocation');
+    console.log(zipLocation);
+
+    console.log('model');
+    console.log(model);
+
+    return await replicate.trainings.create(
+        "stability-ai/sdxl:af1a68a271597604546c09c64aabcd7782c114a63539a4a8d14d1eeda5630c33",
+        {
+            use_face_detection_instead: true,
+            input: {
+                input_images: zipLocation,
+                use_face_detection_instead: true,
+            },
+            destination: model
+        }
+    );
+}
+
+
+function executeEvery5SecondsFor2Minutes(training) {
+    const interval = 5 * 1000; // 5 seconds in milliseconds
+    const duration = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+    // Define the function you want to execute
+    const task = () => {
+        console.log('Function executed!');
+        console.log(training.status)
+        console.log("\n".join(training.logs.split("\n")[-10]))
+    };
+
+    // Start the repeated execution
+    const intervalId = setInterval(task, interval);
+
+    // Stop the repeated execution after 2 minutes
+    setTimeout(() => {
+        clearInterval(intervalId);
+        console.log('Finished executing after 2 minutes.');
+    }, duration);
 }
 
 
