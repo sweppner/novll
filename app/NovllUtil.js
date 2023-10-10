@@ -48,7 +48,7 @@ const openai = new OpenAIApi({
 async function getGptResponse(prompt, is_context=false, messages=[]){
     // const prompt = object[]
 
-    printLog('NovllUtil.js', 'getGptResponse(prompt, is_context=false, messages=[])...', false, '','',true,'Prompt: '+prompt.substring(0, 75)+'...');
+    printLog('NovllUtil.js', 'getGptResponse(prompt, is_context=false, messages=[])', false, '','',true,'Prompt: '+prompt.substring(0, 75)+'...');
 
     if(is_context){
         messages.push({
@@ -81,13 +81,13 @@ async function getGptResponse(prompt, is_context=false, messages=[]){
 
 function hashString(input) {
 
-    printLog('NovllUtil.js', 'hashString(input)...', true, 'input',input);
+    printLog('NovllUtil.js', 'hashString(input)', true, 'input',input);
 
     const hash = crypto.createHash('sha256');
     hash.update(input);
     const hashInput = hash.digest('hex').toString();
 
-    printLog('NovllUtil.js', 'hashString(input)...', true, 'hashInput',hashInput);
+    printLog('NovllUtil.js', 'hashString(input)', true, 'hashInput',hashInput);
 
     return hashInput;
 }
@@ -157,7 +157,7 @@ async function extractJSONFromString(str) {
         response['data'] = data
         response['success'] = true
     } catch {
-        printLog('NovllUtil.js', 'extractJSONFromString(str)...', false, '','',true,'issue parsing JSON from string');
+        printLog('NovllUtil.js', 'extractJSONFromString(str)', false, '','',true,'issue parsing JSON from string');
 
         let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
             "only include the text representing a valid JSON object."+str.substring(startIndex, endIndex);
@@ -188,7 +188,7 @@ async function extractArrayFromString(str) {
         response['data'] = data.array;
         response['success'] = true;
     } catch {
-        printLog('NovllUtil.js', 'extractJSONFromString(str)...', false, '','',true,'issue parsing JSON from string');
+        printLog('NovllUtil.js', 'extractJSONFromString(str)', false, '','',true,'issue parsing JSON from string');
 
         let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
             "only include the text representing a valid JSON object."+str.substring(startIndex, endIndex);
@@ -205,7 +205,7 @@ async function extractArrayFromString(str) {
 
 function requestHasAllDetails(bookConceptPreferences, properties){
 
-    printLog('NovllUtil.js', 'requestHasAllDetails(bookConceptPreferences, properties)...');
+    printLog('NovllUtil.js', 'requestHasAllDetails(bookConceptPreferences, properties)');
 
     let propertyResponses = []
     let has_details = false;
@@ -225,7 +225,7 @@ function requestHasAllDetails(bookConceptPreferences, properties){
 async function uploadZipFile(filePath) {
     const replicateApiToken = process.env.REPLICATE_API_TOKEN;
 
-    printLog('NovllUtil.js', 'uploadZipFile(filePath)...', true, 'filePath',filePath);
+    printLog('NovllUtil.js', 'uploadZipFile(filePath)', true, 'filePath',filePath);
 
 
     if (!replicateApiToken) {
@@ -251,54 +251,111 @@ async function uploadZipFile(filePath) {
 async function compileImagePaths(imageUrls){
 
     let imagePaths = [];
-    for (let i = 0; i < imageUrls.length; i++) {
-        const url = imageUrls[i];
-        const response = await axios.get(url, { responseType: 'stream' });
-        const imagePath = `image_${i}.jpg`;
-        const writer = fs.createWriteStream(imagePath);
-        response.data.pipe(writer);
-        await new Promise((resolve, reject) => {
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
-        imagePaths.push(imagePath);
+    // for (let i = 0; i < imageUrls.length; i++) {
+    //
+    //     });
+    //     imagePaths.push(imagePath);
+    // }
+    return imagePaths;
+}
+async function downloadImagesAndUpload(images) {
+    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'images',images);
+
+    let updatedObjects = [];
+    for(const image of images){
+        let updatedImage = downloadImageAndUpload(image);
+        updatedObjects.push(updatedImage);
     }
+    return updatedObjects;
 }
-async function downloadImagesAndUpload(imageUrls) {
 
-    printLog('NovllUtil.js', 'requestHasAllDetails(bookConceptPreferences, properties)...', true,'imageUrls',imageUrls);
+async function downloadImageAndUpload(image) {
+    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'image',image);
 
-    const imagePaths = await compileImagePaths(imageUrls);
+    const url = image['url'];
+    const title = image['title'];
+    const name = image['character'];
 
-    const zipPath = 'upload.zip';
-    const output = fs.createWriteStream(zipPath);
-    const archive = archiver('zip');
-    archive.pipe(output);
-    imagePaths.forEach(path => {
-        archive.file(path, { name: path });
+    const titleHash = hashString(title);
+    const nameHash = hashString(name);
+
+    const response = await axios.get(url, { responseType: 'stream' });
+    const imagePath = `image_${name}.jpg`;
+    const writer = fs.createWriteStream(imagePath);
+    response.data.pipe(writer);
+    let updatedImage = await new Promise(async (resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+
+        printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true, 'imagePath', imagePath)
+
+        //TODO: change the local download and upload paths to match this format: bookHash/imageName.zip
+        const zipPath = titleHash+'/'+nameHash+'.zip';
+        image['zipPath'] = zipPath;
+        const output = fs.createWriteStream(zipPath);
+        const archive = archiver('zip');
+        archive.pipe(output);
+        archive.file(imagePath, {name: imagePath});
+
+        //     imagePaths.forEach(path => {
+        //     archive.file(path, { name: path });
+        // });
+        await archive.finalize();
+
+        const servingUrl = await uploadZipFile(zipPath);
+
+        image['servingUrl'] = servingUrl;
+
+        // response.push(image);
+        fs.unlinkSync(imagePath);
+        fs.unlinkSync(zipPath);
+
+        return image;
     });
-    await archive.finalize();
-
-    const servingUrl = await uploadZipFile(zipPath);
-
-    imagePaths.forEach(path => fs.unlinkSync(path));
-    fs.unlinkSync(zipPath);
-
-    return servingUrl;
+    return updatedImage;
 }
 
-function printLog(libraryName, functionName, isVariable=false, variableName = '', variable='', isMessage=false, message=''){
 
-    let log =libraryName + ' - ' + functionName;
+
+function printLog(libraryName, functionName, isVariable=false, variableName = '', variable='', isMessage=false, message='', keepParameters=false){
+
+    if(!keepParameters){
+        functionName = replaceWithEllipsis(functionName);
+    }
+    let log =libraryName + '\t- ' + functionName;
 
     if(isVariable){
-        log = log + ' - variable ( '+variableName+' ): [' + variable + ']'
+        log = log + '\t- variable ( '+variableName+' ): [' + variable + ']'
     }
 
     if(isMessage){
-        log = log + ' - message: [' + message + ']'
+        log = log + '\t- message: [' + message + ']'
     }
-    return log
+    console.log(log);
+}
+
+function replaceWithEllipsis(str) {
+    return str.replace(/\(.*?\)/g, '(...)');
+}
+
+function executeEvery5SecondsFor2Minutes(functionToRun) {
+    const interval = 5 * 1000; // 5 seconds in milliseconds
+    const duration = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+    // Define the function you want to execute
+    const task = () => {
+        functionToRun();
+    };
+
+    // Start the repeated execution
+    const intervalId = setInterval(task, interval);
+
+    // Stop the repeated execution after 2 minutes
+    setTimeout(() => {
+        clearInterval(intervalId);
+        printLog('NovllUtil.js', 'executeEvery5SecondsFor2Minutes(functionToRun)', false,'', '',true,'Finished executing after 2 minutes.');
+
+    }, duration);
 }
 
 module.exports = {
@@ -306,6 +363,7 @@ module.exports = {
     downloadImagesAndUpload,
     requestHasAllDetails,
     hashString,
+    downloadImageAndUpload,
     getGptResponse,
     extractJSONFromString,
     extractArrayFromString,

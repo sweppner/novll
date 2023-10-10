@@ -68,7 +68,7 @@ app.get('/book/ideas', async (req, res) => {
 //get book ideas by book author and title
 app.get('/kids/book/ideas', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    NovllUtil.printLog('Server.js', 'get(\'/kids/book/ideas\'...')
+    NovllUtil.printLog('Server.js', 'get(\'/kids/book/ideas\'')
 
     try {
         const bookIdeas = await KidCustomer.getBookIdeas(req.query);
@@ -100,7 +100,7 @@ app.post('/book/build', async (req, res) => {
         }
         response = JSON.stringify(response);
 
-        NovllUtil.printLog('Server.js', 'app.post(\'/book/build\'...', true,'response',response);
+        NovllUtil.printLog('Server.js', 'app.post(\'/book/build\'', true,'response',response);
 
         res.status(200).send();
     } else {
@@ -127,7 +127,7 @@ app.post('/kids/book/build', async (req, res) => {
         }
         response = JSON.stringify(response);
 
-        NovllUtil.printLog('Server.js', 'app.post(\'/kids/book/build\'...', true,'response',response);
+        NovllUtil.printLog('Server.js', 'app.post(\'/kids/book/build\'', true,'response',response);
 
         res.status(200).send();
     // } else {
@@ -163,7 +163,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve index.html as the home page
 app.get('/', (req, res) => {
-    console.log("Starting up web server...")
+    console.log("Starting up web server")
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 // res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Add other headers here

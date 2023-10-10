@@ -8,14 +8,14 @@ let num_pages = 25
 //get book ideas by book author and title
 async function getBookIdeas(bookConceptPreferences, num_ideas=5){
 
-    Util.printLog('KidCustomer.js', 'getBookIdeas(bookConceptPreferences, num_ideas=5)...');
+    Util.printLog('KidCustomer.js', 'getBookIdeas(bookConceptPreferences, num_ideas=5)');
 
     const ideas_properties = ['child_age','child_interests','illustration_style','characters','settings',
         'emotions_include','lessons']
 
     if (Util.requestHasAllDetails(bookConceptPreferences, ideas_properties)) {
 
-        Util.printLog('KidCustomer.js', 'getBookIdeas(bookConceptPreferences, num_ideas=5)...', false, '','', true,'callingPublisher');
+        Util.printLog('KidCustomer.js', 'getBookIdeas(bookConceptPreferences, num_ideas=5)', false, '','', true,'callingPublisher');
 
         bookConceptPreferences['num_ideas'] = num_ideas;
         bookConceptPreferences['reading_level'] = 'kids';
@@ -33,17 +33,17 @@ async function getBookIdeas(bookConceptPreferences, num_ideas=5){
 //build book by selected concept
 async function getNewBook(bookDetails) {
 
-    Util.printLog('KidCustomer.js', 'getNewBook(bookDetails)...');
+    Util.printLog('KidCustomer.js', 'getNewBook(bookDetails)');
 
 
     bookDetails['reading_level'] = 'kids';
 
-    Util.printLog('KidCustomer.js', 'getNewBook(bookDetails)...', true, 'bookDetails', bookDetails);
+    Util.printLog('KidCustomer.js', 'getNewBook(bookDetails)', true, 'bookDetails', bookDetails);
 
     const new_book_properties = ['child_age','child_interests','illustration_style','characters','settings',
         'emotions_include','lessons','your_book_title','your_book_synopsis','num_pages']
 
-    Util.printLog('KidCustomer.js', 'getNewBook(bookDetails)...', true, 'Util.requestHasAllDetails(bookDetails, new_book_properties)', Util.requestHasAllDetails(bookDetails, new_book_properties));
+    Util.printLog('KidCustomer.js', 'getNewBook(bookDetails)', true, 'Util.requestHasAllDetails(bookDetails, new_book_properties)', Util.requestHasAllDetails(bookDetails, new_book_properties));
 
     if(Util.requestHasAllDetails(bookDetails, new_book_properties)){
         // bookDetails['num_pages'] = num_pages;
