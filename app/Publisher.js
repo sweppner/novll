@@ -1,6 +1,6 @@
 const Author = require('./Author');
 const KidsAuthor = require('./KidsAuthor');
-const Illustrator = require('./Illustrator');
+// const Illustrator = require('./Illustrator');
 const StableIllustrator = require('./StableIllustrator');
 const NovllUtil = require('./NovllUtil')
 
@@ -33,7 +33,6 @@ async function buildBook(bookDetails) {
     if(bookDetails['reading_level']=='kids') {
         NovllUtil.printLog('Publisher.js', 'buildBook(bookDetails)...', false,'', '',true,'kids book');
 
-        console.log('kids book')
         try {
             // Wait for the asynchronous function to complete
             book['data'] = await KidsAuthor.createBook(bookDetails);

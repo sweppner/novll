@@ -33,7 +33,6 @@ async function illustrateBook(book){
     let pages = book['pages'];
     let pageNumbers = Object.keys(pages);
 
-
     let prompt = "";
     for (const pageNumber of pageNumbers){
         let page = pages[pageNumber];
@@ -54,7 +53,6 @@ async function illustrateBook(book){
             "This is what is happening in the illustration [" + image_text + "]. " +
             "The characters in the scene must match these descriptions: [" + pageCharactersDescription.toString() + "]." +
             "No text in image.";
-
 
         const illustrationUrl = await getImageFromText(finalScenePrompt)
         book['pages'][pageNumber]['image_url'] = illustrationUrl;

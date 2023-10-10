@@ -16,8 +16,9 @@ const replicate = new Replicate({
 
 
 async function illustrateBook(book){
-    console.log('Illustrator - illustrateBook - book')
-    console.log(book)
+
+    NovllUtil.printLog('StableIllustrator.js', 'illustrateBook(book)...', true,'book', book);
+
     await testTrainingModel(book);
     const bookDetails = book['preferences'];
     const illustrationStyle = bookDetails['illustration_style'];
@@ -26,7 +27,6 @@ async function illustrateBook(book){
     // create the page-by-page descriptions,
     let pages = book['pages'];
     let pageNumbers = Object.keys(pages);
-
 
     let prompt = "";
     for (const pageNumber of pageNumbers){
@@ -59,8 +59,9 @@ async function illustrateBook(book){
 }
 
 async function illustrateBookWithTraining(book){
-    console.log('Illustrator - illustrateBook - book')
-    console.log(book)
+
+    NovllUtil.printLog('StableIllustrator.js', 'illustrateBookWithTraining(book)...', true,'book', book);
+
     const bookDetails = book['preferences'];
     const illustrationStyle = bookDetails['illustration_style'];
     let charactersDescriptions = book['characters'];
@@ -106,7 +107,9 @@ function parseName(name, description){
 }
 
 async function testTrainingModel(book){
-    console.log('testing training model');
+
+    NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', false,'', '', true, 'testing training model');
+
     let characters = book['characters'];
     let settings = book['settings'];
     let style = book['preferences']['illustration_style'];
@@ -125,11 +128,9 @@ async function testTrainingModel(book){
     const hashedModelName = NovllUtil.hashString(modelName)
     let training = await trainModelOnImage(characterName, characterImageLocation, hashedModelName);
 
-    console.log('training')
-    console.log(training)
-    console.log('Function executed!');
-    console.log('training.status')
-    console.log(training.status)
+    NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', true,'training', training);
+    NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', true,'training.status', training.status);
+
     // console.log("\n".join(training.logs.split("\n")[-10]))
     // executeEvery5SecondsFor2Minutes(training);
 }
@@ -166,8 +167,6 @@ async function trainModel(book){
         sceneImages[settingName] = settingImageLocation;
     }
 
-
-
     return model;
 }
 
@@ -186,15 +185,10 @@ async function getImageFromText(text) {
 
 async function trainModelOnImage(text, zipLocation, model) {
     model = model.replace(' ', '_')
-    model =
-    console.log('text');
-    console.log(text);
-
-    console.log('zipLocation');
-    console.log(zipLocation);
-
-    console.log('model');
-    console.log(model);
+    // model =
+    NovllUtil.printLog('StableIllustrator.js', 'trainModelOnImage(text, zipLocation, model)...', true,'text', text);
+    NovllUtil.printLog('StableIllustrator.js', 'trainModelOnImage(text, zipLocation, model)...', true,'zipLocation', zipLocation);
+    NovllUtil.printLog('StableIllustrator.js', 'trainModelOnImage(text, zipLocation, model)...', true,'model', model);
 
     return await replicate.trainings.create(
         "stability-ai/sdxl:af1a68a271597604546c09c64aabcd7782c114a63539a4a8d14d1eeda5630c33",
@@ -216,9 +210,10 @@ function executeEvery5SecondsFor2Minutes(training) {
 
     // Define the function you want to execute
     const task = () => {
-        console.log('Function executed!');
-        console.log(training.status)
-        console.log("\n".join(training.logs.split("\n")[-10]))
+        NovllUtil.printLog('StableIllustrator.js', 'executeEvery5SecondsFor2Minutes(training)...', false,'', '',true,'Function executed!');
+        NovllUtil.printLog('StableIllustrator.js', 'executeEvery5SecondsFor2Minutes(training)...', true,'training.status', training.status);
+
+        // console.log("\n".join(training.logs.split("\n")[-10]))
     };
 
     // Start the repeated execution
@@ -227,7 +222,8 @@ function executeEvery5SecondsFor2Minutes(training) {
     // Stop the repeated execution after 2 minutes
     setTimeout(() => {
         clearInterval(intervalId);
-        console.log('Finished executing after 2 minutes.');
+        NovllUtil.printLog('StableIllustrator.js', 'executeEvery5SecondsFor2Minutes(training)...', false,'', '',true,'Finished executing after 2 minutes.');
+
     }, duration);
 }
 

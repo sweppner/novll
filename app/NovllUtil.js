@@ -47,7 +47,8 @@ const openai = new OpenAIApi({
 
 async function getGptResponse(prompt, is_context=false, messages=[]){
     // const prompt = object[]
-    console.log('Prompt: '+prompt.substring(0, 75)+'...');
+
+    printLog('NovllUtil.js', 'getGptResponse(prompt, is_context=false, messages=[])...', false, '','',true,'Prompt: '+prompt.substring(0, 75)+'...');
 
     if(is_context){
         messages.push({
@@ -79,11 +80,15 @@ async function getGptResponse(prompt, is_context=false, messages=[]){
 };
 
 function hashString(input) {
-    console.log(input)
+
+    printLog('NovllUtil.js', 'hashString(input)...', true, 'input',input);
+
     const hash = crypto.createHash('sha256');
     hash.update(input);
     const hashInput = hash.digest('hex').toString();
-    console.log(hashInput)
+
+    printLog('NovllUtil.js', 'hashString(input)...', true, 'hashInput',hashInput);
+
     return hashInput;
 }
 //
@@ -152,7 +157,8 @@ async function extractJSONFromString(str) {
         response['data'] = data
         response['success'] = true
     } catch {
-        console.log("extractJSONFromString - issue parsing JSON from string")
+        printLog('NovllUtil.js', 'extractJSONFromString(str)...', false, '','',true,'issue parsing JSON from string');
+
         let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
             "only include the text representing a valid JSON object."+str.substring(startIndex, endIndex);
 
@@ -182,7 +188,8 @@ async function extractArrayFromString(str) {
         response['data'] = data.array;
         response['success'] = true;
     } catch {
-        console.log("extractJSONFromString - issue parsing JSON from string")
+        printLog('NovllUtil.js', 'extractJSONFromString(str)...', false, '','',true,'issue parsing JSON from string');
+
         let outlineJSONFixPrompt = "Take this text and extract the JSON from it. Your response should " +
             "only include the text representing a valid JSON object."+str.substring(startIndex, endIndex);
 
@@ -197,10 +204,10 @@ async function extractArrayFromString(str) {
 }
 
 function requestHasAllDetails(bookConceptPreferences, properties){
-    console.log('NovllUtil - requestHasAllDetails')
+
+    printLog('NovllUtil.js', 'requestHasAllDetails(bookConceptPreferences, properties)...');
 
     let propertyResponses = []
-
     let has_details = false;
     let is_first = true;
 
@@ -217,6 +224,9 @@ function requestHasAllDetails(bookConceptPreferences, properties){
 
 async function uploadZipFile(filePath) {
     const replicateApiToken = process.env.REPLICATE_API_TOKEN;
+
+    printLog('NovllUtil.js', 'uploadZipFile(filePath)...', true, 'filePath',filePath);
+
 
     if (!replicateApiToken) {
         throw new Error('REPLICATE_API_TOKEN is not set.');
@@ -238,11 +248,9 @@ async function uploadZipFile(filePath) {
     return response.data.serving_url;
 }
 
-async function downloadImagesAndUpload(imageUrls) {
-    console.log('imageUrls');
-    console.log(imageUrls);
+async function compileImagePaths(imageUrls){
 
-    const imagePaths = [];
+    let imagePaths = [];
     for (let i = 0; i < imageUrls.length; i++) {
         const url = imageUrls[i];
         const response = await axios.get(url, { responseType: 'stream' });
@@ -255,6 +263,12 @@ async function downloadImagesAndUpload(imageUrls) {
         });
         imagePaths.push(imagePath);
     }
+}
+async function downloadImagesAndUpload(imageUrls) {
+
+    printLog('NovllUtil.js', 'requestHasAllDetails(bookConceptPreferences, properties)...', true,'imageUrls',imageUrls);
+
+    const imagePaths = await compileImagePaths(imageUrls);
 
     const zipPath = 'upload.zip';
     const output = fs.createWriteStream(zipPath);
