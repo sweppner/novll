@@ -227,7 +227,6 @@ async function uploadZipFile(filePath) {
 
     printLog('NovllUtil.js', 'uploadZipFile(filePath)', true, 'filePath',filePath);
 
-
     if (!replicateApiToken) {
         throw new Error('REPLICATE_API_TOKEN is not set.');
     }
@@ -241,6 +240,9 @@ async function uploadZipFile(filePath) {
             }
         }
     );
+
+    printLog('NovllUtil.js', 'uploadZipFile(filePath)', true, 'response',response);
+
 
     const uploadUrl = response.data.upload_url;
     execSync(`curl -X PUT -H "Content-Type: application/zip" --upload-file ${filePath} "${uploadUrl}"`);
@@ -259,10 +261,12 @@ async function compileImagePaths(imageUrls){
     return imagePaths;
 }
 async function downloadImagesAndUpload(images) {
-    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'images',images);
+    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'images',images.toString());
 
     let updatedObjects = [];
     for(const image of images){
+        printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'image',image.toString());
+
         let updatedImage = downloadImageAndUpload(image);
         updatedObjects.push(updatedImage);
     }
@@ -270,7 +274,7 @@ async function downloadImagesAndUpload(images) {
 }
 
 async function downloadImageAndUpload(image) {
-    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'image',image);
+    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'image',JSON.stringify(image));
 
     const url = image['url'];
     const title = image['title'];
@@ -280,7 +284,8 @@ async function downloadImageAndUpload(image) {
     const nameHash = hashString(name);
 
     const response = await axios.get(url, { responseType: 'stream' });
-    const imagePath = `image_${name}.jpg`;
+
+    const imagePath = titleHash+`_${nameHash}.jpg`;
     const writer = fs.createWriteStream(imagePath);
     response.data.pipe(writer);
     let updatedImage = await new Promise(async (resolve, reject) => {
@@ -290,12 +295,12 @@ async function downloadImageAndUpload(image) {
         printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true, 'imagePath', imagePath)
 
         //TODO: change the local download and upload paths to match this format: bookHash/imageName.zip
-        const zipPath = titleHash+'/'+nameHash+'.zip';
+        const zipPath = titleHash+'_'+nameHash+'.zip';
         image['zipPath'] = zipPath;
         const output = fs.createWriteStream(zipPath);
         const archive = archiver('zip');
-        archive.pipe(output);
-        archive.file(imagePath, {name: imagePath});
+        await archive.pipe(output);
+        await archive.file(imagePath, {name: imagePath});
 
         //     imagePaths.forEach(path => {
         //     archive.file(path, { name: path });
@@ -310,8 +315,14 @@ async function downloadImageAndUpload(image) {
         fs.unlinkSync(imagePath);
         fs.unlinkSync(zipPath);
 
-        return image;
+        printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'image',JSON.stringify(image));
+
+        resolve(image);
     });
+
+    printLog('NovllUtil.js', 'downloadImagesAndUpload(imageUrls)', true,'updatedImage',JSON.stringify(updatedImage));
+
+
     return updatedImage;
 }
 

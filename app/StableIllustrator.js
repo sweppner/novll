@@ -107,37 +107,37 @@ async function illustrateBook(book){
 function parseName(name, description){
     return description.replace(name+", ", "");
 }
-
-async function testTrainingModel(book){
-
-    NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', false,'', '', true, 'testing training model');
-
-    let characters = book['characters'];
-    let settings = book['settings'];
-    let style = book['preferences']['illustration_style'];
-    let model;
-
-    // let characterImages = {};
-    const characterList = Object.keys(characters);
-    const characterName = characterList[0];
-    const characterDescription = parseName(characterName, characters[characterName]);
-    const characterPrompt = "Create a new cartoon character that looks like this ["+characterDescription+"]"
-        + "and give me multiple headshots from different angles, make sure its the same character with the same " +
-        "face. The artwork should be in the style of : [" + style+ "]";
-    const characterHeadshotsImageUrl = [await getImageFromText(characterPrompt)];
-    const characterImageLocation = await NovllUtil.downloadImagesAndUpload(characterHeadshotsImageUrl);
-    // const modelName = 'test/'+book['preferences']['your_book_title'];
-    const modelName = 'test/'+NovllUtil.hashString(book['preferences']['your_book_title'])
-    let training = await trainModelOnImage(characterName, characterImageLocation, modelName);
-
-    // executeEvery5SecondsFor2Minutes(training)
-
-    NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', true,'training', training);
-    NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', true,'training.status', training.status);
-
-    // console.log("\n".join(training.logs.split("\n")[-10]))
-    // executeEvery5SecondsFor2Minutes(training);
-}
+//
+// async function testTrainingModel(book){
+//
+//     NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', false,'', '', true, 'testing training model');
+//
+//     let characters = book['characters'];
+//     let settings = book['settings'];
+//     let style = book['preferences']['illustration_style'];
+//     let model;
+//
+//     // let characterImages = {};
+//     const characterList = Object.keys(characters);
+//     const characterName = characterList[0];
+//     const characterDescription = parseName(characterName, characters[characterName]);
+//     const characterPrompt = "Create a new cartoon character that looks like this ["+characterDescription+"]"
+//         + "and give me multiple headshots from different angles, make sure its the same character with the same " +
+//         "face. The artwork should be in the style of : [" + style+ "]";
+//     const characterHeadshotsImageUrl = [await getImageFromText(characterPrompt)];
+//     const characterImageLocation = await NovllUtil.downloadImagesAndUpload(characterHeadshotsImageUrl);
+//     // const modelName = 'test/'+book['preferences']['your_book_title'];
+//     const modelName = 'test/'+NovllUtil.hashString(book['preferences']['your_book_title'])
+//     let training = await trainModelOnImage(characterName, characterImageLocation, modelName);
+//
+//     // executeEvery5SecondsFor2Minutes(training)
+//
+//     NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', true,'training', training);
+//     NovllUtil.printLog('StableIllustrator.js', 'testTrainingModel(book)...', true,'training.status', training.status);
+//
+//     // console.log("\n".join(training.logs.split("\n")[-10]))
+//     // executeEvery5SecondsFor2Minutes(training);
+// }
 
 async function trainModel(book){
     NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...');
@@ -145,50 +145,65 @@ async function trainModel(book){
     let characters = book['characters'];
     let settings = book['settings'];
     let style = book['preferences']['illustration_style'];
-    let model;
-    let trainingQueue = []
-    let characterImages = {};
+    let trainingQueue = [];
     const characterList = Object.keys(characters);
+
+    NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...', true,'characterList',characterList.toString());
+
     for(let character_index =0;  character_index < characterList.length; character_index++){
         const characterName = characterList[character_index];
         const characterDescription = parseName(characterName, characters[characterName]);
         const characterPrompt = "Create a new cartoon character that looks like this ["+characterDescription+"]"
            + "and give me multiple headshots (at least 5) from different angles, make sure its the same character with the same " +
-            "face, hair, and other features in each one. The style of the artwork should be : [" + style+ "]";
+            "face, hair, and other facial features in each one. The style of the artwork should be : [" + style+ "]";
         const characterHeadshotsImageUrl = await getImageFromText(characterPrompt);
 
-        const characterImageObject = await NovllUtil.downloadImageAndUpload({
-            url:characterHeadshotsImageUrl,
-            title:book['preferences']['your_book_title'],
-            character:characterName
-        });
+        NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...', true,'characterHeadshotsImageUrl',characterHeadshotsImageUrl);
+
+        const imageParameters = {
+            url:characterHeadshotsImageUrl.toString(),
+            title:book['preferences']['your_book_title'].toString(),
+            character:characterName.toString()
+        };
+
+        NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...', true,'imageParameters',JSON.stringify(imageParameters));
+
+
+        const characterImageObject = await NovllUtil.downloadImageAndUpload(imageParameters);
+
+        NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...', true,'characterImageObject',JSON.stringify(characterImageObject));
+
+        const imageTrainingObject = {
+            'name':characterName,
+            'details':characterImageObject
+        };
+
+        NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...', true,'imageTrainingObject',JSON.stringify(imageTrainingObject));
 
         // characterImages[characterName] = characterImageLocation;
-        trainingQueue.push({
-            name:characterName,
-            details:characterImageObject
-        })
+        trainingQueue.push(imageTrainingObject)
     }
-
-    let sceneImages = {};
-    const settingsList = Object.keys(settings);
-    for(let setting_index =0;  setting_index < settingsList.length; setting_index++){
-        const settingName = characterList[setting_index];
-        const settingDescription = parseName(settingName, characters[settingName]);
-        const settingPrompt = "Create a new setting character that looks like this ["+settingDescription+"]"
-            + "and show the setting from different angles, make sure its the same setting with the same layout. " +
-            ". The artwork should be in the style of : [" + style+ "]\";";
-        const settingHeadshotsImageUrl = await getImageFromText(settingPrompt);
-        const settingImageObject = await NovllUtil.downloadImageAndUpload({
-            url:settingHeadshotsImageUrl,
-            title:book['preferences']['your_book_title'],
-            character:settingName
-        })
-        trainingQueue.push({
-            name:settingName,
-            details:settingImageObject
-        })
-    }
+    //
+    // let sceneImages = {};
+    // const settingsList = Object.keys(settings);
+    // for(let setting_index =0;  setting_index < settingsList.length; setting_index++){
+    //     const settingName = characterList[setting_index];
+    //     const settingDescription = parseName(settingName, characters[settingName]);
+    //     const settingPrompt = "Create a new setting character that looks like this ["+settingDescription+"]"
+    //         + "and show the setting from different angles, make sure its the same setting with the same layout. " +
+    //         ". The artwork should be in the style of : [" + style+ "]\";";
+    //     const settingHeadshotsImageUrl = await getImageFromText(settingPrompt);
+    //     const settingImageObject = await NovllUtil.downloadImageAndUpload({
+    //         url:settingHeadshotsImageUrl,
+    //         title:book['preferences']['your_book_title'],
+    //         character:settingName
+    //     })
+    //     trainingQueue.push({
+    //         name:settingName,
+    //         details:settingImageObject
+    //     })
+    // }
+    NovllUtil.printLog('StableIllustrator.js', 'trainModel(book)...', true,'trainingQueue[0]',JSON.stringify(trainingQueue[0]));
 
     await trainOnImages(trainingQueue);
 
@@ -198,10 +213,15 @@ async function trainModel(book){
 async function trainOnImages(queue){
     NovllUtil.printLog('StableIllustrator.js', 'trainOnImages(queue)...');
 
+    NovllUtil.printLog('StableIllustrator.js', 'trainOnImages(queue)...', true, 'queue',queue.toString());
+
     for(const queuedImage of queue){
+
+        NovllUtil.printLog('StableIllustrator.js', 'trainOnImages(queue)...', true, 'queuedImage',JSON.stringify(queuedImage));
+
         const name = queuedImage['name'];
         const image_location = queuedImage['details']['url'];
-        await trainModelOnImage(name, image_location)
+        await trainModelOnImage(name, image_location);
     }
 }
 
